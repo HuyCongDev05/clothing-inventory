@@ -1,0 +1,6 @@
+.container { display: flex; flex-direction: column; gap: var(--space-6); }
+.header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
+.title { font-size: var(--font-2xl); font-weight: 700; color: var(--color-text); }
+.subtitle { font-size: var(--font-sm); color: var(--color-subtext); margin-top: 4px; }
+.tableBody { padding: 0; }
+.actions { display: flex; align-items: center; justify-content: center; gap: var(--space-1); }

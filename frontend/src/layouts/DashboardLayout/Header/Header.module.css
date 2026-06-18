@@ -1,0 +1,119 @@
+.header {
+  height: var(--header-height);
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.menuBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-subtext);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.menuBtn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
+.desktopToggle {
+  display: flex;
+}
+
+.pageInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageTitle {
+  font-size: var(--font-xl);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.iconBtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-subtext);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.iconBtn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
+.badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+  background-color: var(--color-danger);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .desktopToggle {
+    display: none;
+  }
+
+  .menuBtn:first-child {
+    display: flex;
+  }
+
+  .header {
+    padding: 0 var(--space-4);
+  }
+}
+
+@media (min-width: 769px) {
+  .menuBtn:first-child {
+    display: none;
+  }
+}

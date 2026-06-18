@@ -1,0 +1,244 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: var(--font-sm);
+  color: var(--color-subtext);
+  margin-top: 4px;
+}
+
+.savedAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sideCol {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.tableCardBody {
+  padding: 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.lineTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-base);
+}
+
+.lineTable thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-subtext);
+  background-color: var(--color-hover);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.lineTable tbody tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lineTable tbody tr:last-child {
+  border-bottom: none;
+}
+
+.lineTable tbody td {
+  padding: 10px 14px;
+  vertical-align: middle;
+}
+
+.indexCell {
+  width: 44px;
+  text-align: center;
+  color: var(--color-subtext);
+  font-size: var(--font-sm);
+}
+
+.skuCell {
+  width: 100px;
+  font-size: var(--font-sm);
+  color: var(--color-subtext);
+  font-family: monospace;
+}
+
+.totalCell {
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.lineSelect {
+  width: 100%;
+  min-width: 200px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  color: var(--color-text);
+  background-color: var(--color-white);
+  outline: none;
+  cursor: pointer;
+}
+
+.lineSelect:focus {
+  border-color: var(--color-primary);
+}
+
+.lineInput {
+  width: 90px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  color: var(--color-text);
+  outline: none;
+}
+
+.lineInput:focus {
+  border-color: var(--color-primary);
+}
+
+.removeBtn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--color-subtext);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.removeBtn:hover {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: var(--space-5);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-base);
+  color: var(--color-subtext);
+}
+
+.totalRow {
+  border-bottom: none;
+  padding-top: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.totalAmount {
+  font-size: var(--font-xl);
+  color: var(--color-primary);
+}
+
+.sideActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sideActions button {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 1100px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .sideCol {
+    position: static;
+  }
+
+  .sideActions {
+    flex-direction: row;
+  }
+
+  .sideActions button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

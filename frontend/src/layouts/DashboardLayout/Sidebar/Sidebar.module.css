@@ -1,0 +1,161 @@
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--color-sidebar);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--transition-slow);
+  position: relative;
+}
+
+.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.logoName {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.logoSub {
+  font-size: var(--font-xs);
+  color: var(--color-subtext);
+  white-space: nowrap;
+}
+
+.navGroups {
+  flex: 1;
+  padding: var(--space-2) 0;
+  overflow-y: auto;
+}
+
+.navGroup {
+  padding: var(--space-3) 0 var(--space-1);
+}
+
+.groupLabel {
+  display: block;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-subtext);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin: 1px 8px;
+  border-radius: var(--radius-md);
+  color: var(--color-subtext);
+  font-size: var(--font-base);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--transition), color var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.navItem i {
+  font-size: 15px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+.navItem:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
+.active {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.active:hover {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary), #7C3AED);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.userName {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: var(--font-xs);
+  color: var(--color-subtext);
+  white-space: nowrap;
+}

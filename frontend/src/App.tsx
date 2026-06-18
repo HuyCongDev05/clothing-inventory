@@ -6,37 +6,41 @@ import { WarehouseReceiptPage } from './pages/Coordinator/WarehouseReceipt/Wareh
 import { Payment } from './pages/Coordinator/Payment/Payment';
 import { ProductList } from './pages/WarehouseStaff/ProductList/ProductList';
 import { CreateProduct } from './pages/WarehouseStaff/CreateProduct/CreateProduct';
-import { UpdateProduct } from './pages/WarehouseStaff/UpdateProduct/UpdateProduct';
 import { SupplierManagement } from './pages/StoreKeeper/SupplierManagement/SupplierManagement';
 import { SupplierContact } from './pages/StoreKeeper/SupplierContact/SupplierContact';
-import { SupplierUpdate } from './pages/StoreKeeper/SupplierUpdate/SupplierUpdate';
+import { Login } from './pages/Login/Login';
 import { ROUTES } from './constants/routes';
+import { ToastProvider } from './components/Toast/ToastProvider';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path={ROUTES.LOGIN} element={<Login />} />
 
-          {/* Điều phối viên */}
-          <Route path={ROUTES.COORDINATOR_SUPPLIER} element={<SupplierList />} />
-          <Route path={ROUTES.COORDINATOR_RECEIPT} element={<WarehouseReceiptPage />} />
-          <Route path={ROUTES.COORDINATOR_PAYMENT} element={<Payment />} />
+          {/* Protected – có sidebar & header */}
+          <Route element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
 
-          {/* Nhân viên kho */}
-          <Route path={ROUTES.WAREHOUSE_PRODUCTS} element={<ProductList />} />
-          <Route path={ROUTES.WAREHOUSE_CREATE_PRODUCT} element={<CreateProduct />} />
-          <Route path={ROUTES.WAREHOUSE_UPDATE_PRODUCT} element={<UpdateProduct />} />
+            {/* Điều phối viên */}
+            <Route path={ROUTES.COORDINATOR_SUPPLIER} element={<SupplierList />} />
+            <Route path={ROUTES.COORDINATOR_RECEIPT} element={<WarehouseReceiptPage />} />
+            <Route path={ROUTES.COORDINATOR_PAYMENT} element={<Payment />} />
 
-          {/* Thủ kho */}
-          <Route path={ROUTES.STOREKEEPER_SUPPLIERS} element={<SupplierManagement />} />
-          <Route path={ROUTES.STOREKEEPER_CONTACT} element={<SupplierContact />} />
-          <Route path={ROUTES.STOREKEEPER_UPDATE_SUPPLIER} element={<SupplierUpdate />} />
+            {/* Nhân viên kho */}
+            <Route path={ROUTES.WAREHOUSE_PRODUCTS} element={<ProductList />} />
+            <Route path={ROUTES.WAREHOUSE_CREATE_PRODUCT} element={<CreateProduct />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+            {/* Thủ kho */}
+            <Route path={ROUTES.STOREKEEPER_SUPPLIERS} element={<SupplierManagement />} />
+            <Route path={ROUTES.STOREKEEPER_CONTACT} element={<SupplierContact />} />
+
+            <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
