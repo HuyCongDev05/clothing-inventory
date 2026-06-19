@@ -10,6 +10,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/warehouse/products/create': 'Tạo sản phẩm mới',
   '/storekeeper/suppliers': 'Quản lý nhà cung cấp',
   '/storekeeper/contact': 'Liên hệ đặt hàng',
+  '/profile': 'Thông tin cá nhân',
 };
 
 interface HeaderProps {

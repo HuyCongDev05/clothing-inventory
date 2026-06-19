@@ -5,7 +5,9 @@ import com.example.backend.dto.response.AuthResponseDto;
 import com.example.backend.exception.ErrorCode;
 import com.example.backend.exception.InvalidException;
 import com.example.backend.mapper.AuthMapper;
+import com.example.backend.model.Role;
 import com.example.backend.model.User;
+import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.detail.UserDetailService;
 import com.example.backend.util.JwtUtil;
@@ -23,6 +25,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,7 @@ public class AuthService {
     private final AuthMapper authMapper;
     private final PasswordEncoder passwordEncoder;
     private final UserDetailService userDetailService;
+    private final RoleRepository roleRepository;
 
     public AuthResponseDto.Me me(String uuid) {
         User user = userRepository.findByUuid(uuid).orElseThrow(() -> new InvalidException(ErrorCode.ACCOUNT_NOT_FOUND));
@@ -74,6 +79,14 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(register.getPassword()));
         user.setFullName(register.getFullName());
         user.setEmail(register.getEmail());
+        user.setPhone(register.getPhone());
+
+        Set<Role> roles = register.getRoles().stream()
+                .map(roleName -> roleRepository.findByName(roleName)
+                        .orElseThrow(() -> new InvalidException(ErrorCode.ROLE_NOT_FOUND)))
+                .collect(Collectors.toSet());
+        user.setRoles(roles);
+        
         userRepository.save(user);
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 register.getUsername(),

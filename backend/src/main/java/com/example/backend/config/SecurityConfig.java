@@ -28,7 +28,9 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/"
+                                "/",
+                                "/api/v1/auth/login",
+                                "api/v1/auth/refresh-token"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

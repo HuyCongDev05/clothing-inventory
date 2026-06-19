@@ -137,6 +137,7 @@
   font-size: var(--font-sm);
   font-weight: 600;
   flex-shrink: 0;
+  transition: transform var(--transition);
 }
 
 .userInfo {
@@ -158,4 +159,41 @@
   font-size: var(--font-xs);
   color: var(--color-subtext);
   white-space: nowrap;
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: var(--color-subtext);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.logoutBtn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-danger);
+}
+
+.userProfileLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: opacity var(--transition);
+}
+
+.userProfileLink:hover .userName {
+  color: var(--color-primary);
+}
+
+.userProfileLink:hover .avatar {
+  transform: scale(1.05);
 }

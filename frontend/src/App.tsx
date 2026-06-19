@@ -9,6 +9,7 @@ import { CreateProduct } from './pages/WarehouseStaff/CreateProduct/CreateProduc
 import { SupplierManagement } from './pages/StoreKeeper/SupplierManagement/SupplierManagement';
 import { SupplierContact } from './pages/StoreKeeper/SupplierContact/SupplierContact';
 import { Login } from './pages/Login/Login';
+import { Profile } from './pages/Profile/Profile';
 import { ROUTES } from './constants/routes';
 import { ToastProvider } from './components/Toast/ToastProvider';
 
@@ -33,9 +34,12 @@ export default function App() {
             <Route path={ROUTES.WAREHOUSE_PRODUCTS} element={<ProductList />} />
             <Route path={ROUTES.WAREHOUSE_CREATE_PRODUCT} element={<CreateProduct />} />
 
-            {/* Thủ kho */}
+             {/* Thủ kho */}
             <Route path={ROUTES.STOREKEEPER_SUPPLIERS} element={<SupplierManagement />} />
             <Route path={ROUTES.STOREKEEPER_CONTACT} element={<SupplierContact />} />
+
+            {/* Thông tin cá nhân */}
+            <Route path={ROUTES.PROFILE} element={<Profile />} />
 
             <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
           </Route>

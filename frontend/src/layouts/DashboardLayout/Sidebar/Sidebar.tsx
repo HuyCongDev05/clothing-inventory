@@ -1,14 +1,18 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { NAV_GROUPS } from '../../../constants/navigation';
 import { ROUTES } from '../../../constants/routes';
+import { getCurrentUser, logout, type User } from '../../../services/auth';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
   collapsed?: boolean;
+  user?: User | null;
 }
 
-export function Sidebar({ collapsed = false }: SidebarProps) {
+export function Sidebar({ collapsed = false, user: propUser }: SidebarProps) {
   const location = useLocation();
+  const user = propUser !== undefined ? propUser : getCurrentUser();
+  const avatarChar = user?.fullName ? user.fullName.trim().charAt(0).toUpperCase() : 'U';
 
   return (
     <nav className={[styles.sidebar, collapsed ? styles.collapsed : ''].join(' ')}>
@@ -63,13 +67,39 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
       </div>
 
       <div className={styles.userCard}>
-        <div className={styles.avatar} aria-hidden>
-          <span>N</span>
-        </div>
-        {!collapsed && (
-          <div className={styles.userInfo}>
-            <span className={styles.userName}>Nguyễn Văn A</span>
-            <span className={styles.userRole}>Điều phối viên</span>
+        {!collapsed ? (
+          <>
+            <Link to={ROUTES.PROFILE} className={styles.userProfileLink}>
+              <div className={styles.avatar} aria-hidden>
+                <span>{avatarChar}</span>
+              </div>
+              <div className={styles.userInfo} style={{ flex: 1, minWidth: 0 }}>
+                <span className={styles.userName}>{user?.fullName || 'Người dùng'}</span>
+                <span className={styles.userRole}>{user?.email || 'Hệ thống'}</span>
+              </div>
+            </Link>
+            <button 
+              onClick={logout} 
+              className={styles.logoutBtn} 
+              title="Đăng xuất"
+              aria-label="Đăng xuất"
+            >
+              <i className="fi fi-rr-sign-out-alt" />
+            </button>
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', width: '100%' }}>
+            <Link to={ROUTES.PROFILE} className={styles.avatar} title="Trang cá nhân">
+              <span>{avatarChar}</span>
+            </Link>
+            <button 
+              onClick={logout} 
+              className={styles.logoutBtn} 
+              title="Đăng xuất"
+              aria-label="Đăng xuất"
+            >
+              <i className="fi fi-rr-sign-out-alt" />
+            </button>
           </div>
         )}
       </div>

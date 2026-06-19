@@ -68,7 +68,6 @@
   color: var(--color-text);
 }
 
-/* States styling */
 .success .icon {
   color: var(--color-success);
 }
@@ -81,7 +80,6 @@
   color: var(--color-danger);
 }
 
-/* Animations */
 @keyframes slideIn {
   from {
     transform: translateX(120%);

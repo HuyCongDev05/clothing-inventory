@@ -9,6 +9,7 @@ public enum ErrorCode {
     FORBIDDEN_ACCESS(403, "Forbidden access"),
     INACTIVE(400, "Account is inactive"),
     ACCOUNT_NOT_FOUND(404, "Account not found"),
+    ROLE_NOT_FOUND(404, "Role not found"),
     CONFLICT_ACCOUNT(409, "Account already exists"),
     UNAUTHORIZED_REFRESH_TOKEN(401, "Invalid refresh token"),
     INTERNAL_SERVER_ERROR(500, "Internal server error");

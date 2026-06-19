@@ -1,8 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../../components/Input/Input';
 import { Button } from '../../components/Button/Button';
 import { ROUTES } from '../../constants/routes';
+import { login, isAuthenticated } from '../../services/auth';
+import { ApiError } from '../../services/api';
+import { useToast } from '../../components/Toast/ToastContext';
 import styles from './Login.module.css';
 
 export function Login() {
@@ -10,12 +13,36 @@ export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate(ROUTES.DASHBOARD, { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      showToast('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu', 'warning');
+      return;
+    }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    navigate(ROUTES.DASHBOARD);
+    try {
+      await login(username, password);
+      showToast('Đăng nhập thành công!', 'success');
+      navigate(ROUTES.DASHBOARD);
+    } catch (err: unknown) {
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại!';
+      if (err instanceof ApiError) {
+        errorMessage = err.status === 401 ? 'Sai tài khoản hoặc mật khẩu' : 'Máy chủ gặp lỗi';
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      showToast(errorMessage, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
