@@ -17,11 +17,6 @@ export const NAV_GROUPS: NavGroup[] = [
     groupLabel: 'NHÂN VIÊN ĐIỀU PHỐI',
     items: [
       {
-        label: 'Nhà cung cấp',
-        path: ROUTES.COORDINATOR_SUPPLIER,
-        icon: 'fi fi-rr-building',
-      },
-      {
         label: 'Phiếu nhập kho',
         path: ROUTES.COORDINATOR_RECEIPT,
         icon: 'fi fi-rr-file-invoice',

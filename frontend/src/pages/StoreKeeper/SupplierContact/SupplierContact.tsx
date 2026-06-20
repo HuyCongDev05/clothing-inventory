@@ -1,12 +1,28 @@
-import { MOCK_SUPPLIERS } from '../../../data/suppliers.mock';
+import { useState, useEffect } from 'react';
 import { Card, CardBody } from '../../../components/Card/Card';
 import { Button } from '../../../components/Button/Button';
 import { useToast } from '../../../components/Toast/ToastContext';
+import { getSuppliersPage } from '../../../services/supplier';
+import type { Supplier } from '../../../types/supplier.types';
 import styles from './SupplierContact.module.css';
 
 export function SupplierContact() {
-  const activeSuppliers = MOCK_SUPPLIERS.filter((s) => s.status === 'active');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const data = await getSuppliersPage(1);
+        setSuppliers(data.items);
+      } catch (err) {
+        console.error('Failed to fetch contact suppliers:', err);
+      }
+    };
+    fetchSuppliers();
+  }, []);
+
+  const activeSuppliers = suppliers.filter((s) => s.status === 'active');
 
   return (
     <section>
@@ -23,14 +39,9 @@ export function SupplierContact() {
             <Card key={supplier.id}>
               <CardBody>
                 <div className={styles.cardContent}>
-                  <div className={styles.avatarWrap}>
-                    <div className={styles.avatar}>
-                      {supplier.companyName.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className={styles.companyName}>{supplier.companyName}</h3>
-                      <span className={styles.code}>{supplier.code}</span>
-                    </div>
+                  <div>
+                    <h3 className={styles.companyName}>{supplier.companyName}</h3>
+                    <span className={styles.code}>{supplier.code}</span>
                   </div>
 
                   <div className={styles.contactInfo}>

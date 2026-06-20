@@ -35,6 +35,20 @@ export function CreateProduct() {
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
     };
 
+  const handlePriceChange = (field: 'importPrice' | 'salePrice') =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawVal = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+      setForm((prev) => ({ ...prev, [field]: rawVal }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+    };
+
+  const formatInputNumber = (val: string | number) => {
+    if (!val && val !== 0) return '';
+    const cleanVal = String(val).replace(/\./g, '').replace(/[^0-9]/g, '');
+    if (!cleanVal) return '';
+    return new Intl.NumberFormat('vi-VN').format(Number(cleanVal));
+  };
+
   const handleSubmit = () => {
     const errs = validate(form as unknown as Record<string, string>, {
       sku: [isRequired],
@@ -70,8 +84,8 @@ export function CreateProduct() {
                   <Input id="name" label="Tên sản phẩm" required value={form.name} onChange={handleChange('name')} error={errors.name} placeholder="Nhập tên sản phẩm" />
                   <Select id="category" label="Danh mục" required options={CATEGORY_OPTIONS} value={form.category} onChange={handleChange('category')} error={errors.category} />
                   <Select id="unit" label="Đơn vị tính" options={UNIT_OPTIONS} value={form.unit} onChange={handleChange('unit')} />
-                  <Input id="importPrice" label="Giá nhập" required type="number" min={0} value={form.importPrice} onChange={handleChange('importPrice')} error={errors.importPrice} placeholder="0" />
-                  <Input id="salePrice" label="Giá bán" required type="number" min={0} value={form.salePrice} onChange={handleChange('salePrice')} error={errors.salePrice} placeholder="0" />
+                  <Input id="importPrice" label="Giá nhập" required type="text" suffix="VND" value={formatInputNumber(form.importPrice)} onChange={handlePriceChange('importPrice')} error={errors.importPrice} placeholder="0" />
+                  <Input id="salePrice" label="Giá bán" required type="text" suffix="VND" value={formatInputNumber(form.salePrice)} onChange={handlePriceChange('salePrice')} error={errors.salePrice} placeholder="0" />
                 </div>
 
                 <div className={styles.formGroup}>

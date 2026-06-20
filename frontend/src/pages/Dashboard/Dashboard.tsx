@@ -1,21 +1,34 @@
+import { useEffect, useState } from 'react';
 import styles from './Dashboard.module.css';
 import { Card, CardBody } from '../../components/Card/Card';
 import { MOCK_PRODUCTS } from '../../data/products.mock';
-import { MOCK_SUPPLIERS } from '../../data/suppliers.mock';
 import { MOCK_RECEIPTS } from '../../data/payments.mock';
 import { formatCurrency } from '../../utils/formatters';
+import { getSuppliersPage } from '../../services/supplier';
 
 const totalRevenue = MOCK_RECEIPTS.reduce((s, r) => s + r.totalAmount, 0);
 const totalStock = MOCK_PRODUCTS.reduce((s, p) => s + p.stock, 0);
 
-const STATS = [
-  { label: 'Tổng doanh thu nhập', value: formatCurrency(totalRevenue), icon: 'fi fi-rr-sack-dollar', color: 'primary' },
-  { label: 'Tổng sản phẩm', value: MOCK_PRODUCTS.length.toString(), icon: 'fi fi-rr-box-alt', color: 'success' },
-  { label: 'Nhà cung cấp', value: MOCK_SUPPLIERS.length.toString(), icon: 'fi fi-rr-building', color: 'warning' },
-  { label: 'Tổng tồn kho', value: `${totalStock} sản phẩm`, icon: 'fi fi-rr-warehouse-alt', color: 'info' },
-];
-
 export function Dashboard() {
+  const [supplierCount, setSupplierCount] = useState<number | string>('...');
+
+  useEffect(() => {
+    getSuppliersPage(1)
+      .then((res) => {
+        setSupplierCount(res.totalElements);
+      })
+      .catch((err) => {
+        console.error('Lỗi tải số lượng nhà cung cấp:', err);
+        setSupplierCount(0);
+      });
+  }, []);
+
+  const stats = [
+    { label: 'Tổng doanh thu nhập', value: formatCurrency(totalRevenue), icon: 'fi fi-rr-sack-dollar', color: 'primary' },
+    { label: 'Tổng sản phẩm', value: MOCK_PRODUCTS.length.toString(), icon: 'fi fi-rr-box-alt', color: 'success' },
+    { label: 'Nhà cung cấp', value: supplierCount.toString(), icon: 'fi fi-rr-building', color: 'warning' },
+    { label: 'Tổng tồn kho', value: `${totalStock} sản phẩm`, icon: 'fi fi-rr-warehouse-alt', color: 'info' },
+  ];
   return (
     <section>
       <div className={styles.container}>
@@ -27,7 +40,7 @@ export function Dashboard() {
         </div>
 
         <div className={styles.statsGrid}>
-          {STATS.map((stat) => (
+          {stats.map((stat) => (
             <Card key={stat.label}>
               <CardBody className={styles.statCard}>
                 <div className={[styles.statIcon, styles[stat.color]].join(' ')}>

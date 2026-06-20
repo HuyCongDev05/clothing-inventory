@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './layouts/DashboardLayout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard/Dashboard';
-import { SupplierList } from './pages/Coordinator/Supplier/SupplierList';
 import { WarehouseReceiptPage } from './pages/Coordinator/WarehouseReceipt/WarehouseReceipt';
 import { Payment } from './pages/Coordinator/Payment/Payment';
 import { ProductList } from './pages/WarehouseStaff/ProductList/ProductList';
@@ -26,7 +25,6 @@ export default function App() {
             <Route index element={<Dashboard />} />
 
             {/* Điều phối viên */}
-            <Route path={ROUTES.COORDINATOR_SUPPLIER} element={<SupplierList />} />
             <Route path={ROUTES.COORDINATOR_RECEIPT} element={<WarehouseReceiptPage />} />
             <Route path={ROUTES.COORDINATOR_PAYMENT} element={<Payment />} />
 

@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { ReceiptItem, WarehouseReceipt } from '../../../types/payment.types';
-import { MOCK_SUPPLIERS } from '../../../data/suppliers.mock';
+import type { Supplier } from '../../../types/supplier.types';
+import { getSuppliersPage } from '../../../services/supplier';
 import { MOCK_PRODUCTS } from '../../../data/products.mock';
 import { Select } from '../../../components/Select/Select';
 import { Input } from '../../../components/Input/Input';
@@ -9,7 +10,6 @@ import { Card, CardHeader, CardBody } from '../../../components/Card/Card';
 import { formatCurrency } from '../../../utils/formatters';
 import styles from './WarehouseReceipt.module.css';
 
-const SUPPLIER_OPTIONS = MOCK_SUPPLIERS.map((s) => ({ value: s.id, label: s.companyName }));
 const PRODUCT_OPTIONS = MOCK_PRODUCTS.map((p) => ({ value: p.id, label: `${p.sku} - ${p.name}` }));
 
 interface LineItem extends ReceiptItem {
@@ -19,10 +19,26 @@ interface LineItem extends ReceiptItem {
 const EMPTY_LINE: LineItem = { id: '', productId: '', sku: '', productName: '', quantity: 1, unitPrice: 0, totalPrice: 0 };
 
 export function WarehouseReceiptPage() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierId, setSupplierId] = useState('');
   const [note, setNote] = useState('');
   const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE, id: '1' }]);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    // Lấy danh sách nhà cung cấp từ API
+    getSuppliersPage(1)
+      .then((res) => {
+        setSuppliers(res.items);
+      })
+      .catch((err) => {
+        console.error('Lỗi tải danh sách nhà cung cấp:', err);
+      });
+  }, []);
+
+  const supplierOptions = useMemo(() => {
+    return suppliers.map((s) => ({ value: s.id, label: s.companyName }));
+  }, [suppliers]);
 
   const totalQty = useMemo(() => lines.reduce((s, l) => s + (l.quantity || 0), 0), [lines]);
   const totalAmount = useMemo(() => lines.reduce((s, l) => s + (l.totalPrice || 0), 0), [lines]);
@@ -66,7 +82,7 @@ export function WarehouseReceiptPage() {
     const receipt: Partial<WarehouseReceipt> = {
       code: `PNK-2026-${String(Date.now()).slice(-4)}`,
       supplierId,
-      supplierName: MOCK_SUPPLIERS.find((s) => s.id === supplierId)?.companyName ?? '',
+      supplierName: suppliers.find((s) => s.id === supplierId)?.companyName ?? '',
       items: lines,
       totalQuantity: totalQty,
       totalAmount,
@@ -105,7 +121,7 @@ export function WarehouseReceiptPage() {
                     id="supplier"
                     label="Nhà cung cấp"
                     required
-                    options={SUPPLIER_OPTIONS}
+                    options={supplierOptions}
                     placeholder="Chọn nhà cung cấp"
                     value={supplierId}
                     onChange={(e) => setSupplierId(e.target.value)}
@@ -167,10 +183,13 @@ export function WarehouseReceiptPage() {
                           <td>
                             <input
                               className={styles.lineInput}
-                              type="number"
-                              min={0}
-                              value={line.unitPrice}
-                              onChange={(e) => updateLine(idx, 'unitPrice', Number(e.target.value))}
+                              type="text"
+                              inputMode="numeric"
+                              value={line.unitPrice ? new Intl.NumberFormat('vi-VN').format(line.unitPrice) : ''}
+                              onChange={(e) => {
+                                const v = Number(e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+                                updateLine(idx, 'unitPrice', v);
+                              }}
                             />
                           </td>
                           <td className={styles.totalCell}>{formatCurrency(line.totalPrice)}</td>

@@ -23,11 +23,11 @@ function ToastItem({
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return 'fi fi-sr-circle-check';
+        return 'fi fi-rr-check-circle';
       case 'warning':
-        return 'fi fi-sr-exclamation';
+        return 'fi fi-rr-exclamation';
       case 'error':
-        return 'fi fi-sr-cross-circle';
+        return 'fi fi-rr-cross-circle';
     }
   };
 

@@ -1,10 +1,11 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.request.CategoryRequest;
+import com.example.backend.dto.request.CategoryRequestDto;
 import com.example.backend.dto.response.CategoryResponseDto;
 import com.example.backend.mapper.CategoryMapper;
 import com.example.backend.model.Category;
 import com.example.backend.repository.CategoryRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,8 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
-    public CategoryResponseDto createCategory(CategoryRequest request) {
+    @Transactional
+    public CategoryResponseDto createCategory(CategoryRequestDto request) {
         Category category = categoryMapper.toEntity(request);
         category.setStatus("ACTIVE"); // Default status
         Category savedCategory = categoryRepository.save(category);

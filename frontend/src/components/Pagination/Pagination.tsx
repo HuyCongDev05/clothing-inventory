@@ -8,11 +8,9 @@ interface PaginationProps {
 
 export function Pagination({ pagination, onPageChange }: PaginationProps) {
   const { page, pageSize, total } = pagination;
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  if (totalPages <= 1) return null;
-
-  const start = (page - 1) * pageSize + 1;
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
 
   // Tính danh sách số trang hiển thị quanh trang hiện tại

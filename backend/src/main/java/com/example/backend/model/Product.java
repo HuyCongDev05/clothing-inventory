@@ -23,14 +23,13 @@ public class Product {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @Column(length = 255)
     private String brand;
 
     @Column(columnDefinition = "TEXT")

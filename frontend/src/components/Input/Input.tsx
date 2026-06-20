@@ -5,9 +5,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   icon?: string;
+  suffix?: string;
 }
 
-export function Input({ label, error, icon, id, className, ...rest }: InputProps) {
+export function Input({ label, error, icon, suffix, id, className, ...rest }: InputProps) {
   const isPasswordInput = rest.type === 'password';
   const [showPassword, setShowPassword] = useState(false);
 
@@ -31,10 +32,12 @@ export function Input({ label, error, icon, id, className, ...rest }: InputProps
             styles.input,
             icon ? styles.withIcon : '',
             isPasswordInput ? styles.withRightIcon : '',
+            suffix ? styles.withSuffix : '',
             error ? styles.hasError : '',
             className ?? '',
           ].join(' ')}
         />
+        {suffix && <span className={styles.suffix}>{suffix}</span>}
         {isPasswordInput && (
           <button
             type="button"

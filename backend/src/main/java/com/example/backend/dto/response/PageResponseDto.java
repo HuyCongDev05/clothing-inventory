@@ -9,7 +9,7 @@ public record PageResponseDto<T>(List<T> items, int page, int size, long totalEl
     public static <T> PageResponseDto<T> from(Page<T> page) {
         return new PageResponseDto<>(
                 page.getContent(),
-                page.getNumber(),
+                page.getNumber() + 1,
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages()

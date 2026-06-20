@@ -6,6 +6,7 @@ import { Table } from '../../../components/Table/Table';
 import { Modal } from '../../../components/Modal/Modal';
 import { Button } from '../../../components/Button/Button';
 import { Card, CardHeader, CardBody } from '../../../components/Card/Card';
+import { Input } from '../../../components/Input/Input';
 import type { TableColumn } from '../../../types/common.types';
 import { formatCurrency, formatDate } from '../../../utils/formatters';
 import styles from './Payment.module.css';
@@ -172,21 +173,19 @@ export function Payment() {
                   ))}
                 </div>
 
-                <p className={styles.payLabel}>Số tiền thanh toán</p>
-                <div className={styles.payInputWrap}>
-                  <input
-                    className={styles.payInput}
-                    type="text"
-                    inputMode="numeric"
-                    value={payAmount}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^0-9]/g, '');
-                      setPayAmount(v);
-                    }}
-                    placeholder="Nhập số tiền..."
-                  />
-                  <span className={styles.currency}>VND</span>
-                </div>
+                <Input
+                  id="payAmount"
+                  label="Số tiền thanh toán"
+                  type="text"
+                  inputMode="numeric"
+                  suffix="VND"
+                  value={payAmount ? new Intl.NumberFormat('vi-VN').format(Number(payAmount)) : ''}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                    setPayAmount(v);
+                  }}
+                  placeholder="Nhập số tiền..."
+                />
                 <p className={styles.payHint}>Tối đa: {formatCurrency(currentSelected.remainingAmount)}</p>
               </div>
             )}
