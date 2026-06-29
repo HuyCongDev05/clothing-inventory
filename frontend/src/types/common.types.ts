@@ -1,3 +1,15 @@
+/**
+ * Ánh xạ FormatMessageResponseDto<T> (backend) — GlobalExceptionHandler
+ * tự động bọc TẤT CẢ response vào cấu trúc này qua ResponseBodyAdvice.
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
 export type Status = "active" | "inactive";
 
 export type PaymentStatus = "paid" | "partial" | "unpaid";

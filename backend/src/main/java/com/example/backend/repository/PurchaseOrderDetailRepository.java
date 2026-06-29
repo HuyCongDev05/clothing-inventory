@@ -10,5 +10,7 @@ import java.util.List;
 public interface PurchaseOrderDetailRepository extends JpaRepository<PurchaseOrderDetail, Long> {
     List<PurchaseOrderDetail> findByPurchaseOrderId(Long purchaseOrderId);
 
+    void deleteByPurchaseOrderId(Long purchaseOrderId);
+
     boolean existsByVariantId(Long variantId);
 }

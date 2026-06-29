@@ -6,23 +6,52 @@ import { Select } from "../../../components/Select/Select";
 import { Input } from "../../../components/Input/Input";
 import { ConfirmDialog } from "../../../components/ConfirmDialog/ConfirmDialog";
 import { Table } from "../../../components/Table/Table";
+import { Pagination } from "../../../components/Pagination/Pagination";
 import { useToast } from "../../../components/Toast/ToastContext";
-import { useWarehouseContext } from "../../../hooks/useWarehouseContext";
 import { getSuppliersPage } from "../../../services/supplier";
 import { getProductsPage } from "../../../services/product";
-import { formatCurrency, formatDate } from "../../../utils/formatters";
+import {
+  getPurchaseOrdersPage,
+  createPurchaseOrder,
+  updatePurchaseOrder,
+  updatePurchaseOrderStatus,
+} from "../../../services/purchaseOrder";
+import type { PurchaseOrderCreateRequestDto } from "../../../services/purchaseOrder";
+import { formatCurrency, formatDateTime } from "../../../utils/formatters";
 import type { TableColumn } from "../../../types/common.types";
-import type { PurchaseOrder, ReceiptItem } from "../../../types/payment.types";
+import type { PurchaseOrder } from "../../../types/purchaseOrder.types";
 import type { Supplier } from "../../../types/supplier.types";
 import type { Product } from "../../../types/product.types";
 import styles from "./PurchaseOrder.module.css";
 
+// ─── Hằng số ──────────────────────────────────────────────────────────────────
+
 const ORDER_STATUS_LABEL: Record<string, string> = {
-  PENDING: "Chờ duyệt",
-  APPROVED: "Đã duyệt",
+  DRAFT: "Nháp",
+  PENDING: "Chờ nhập",
+  RECEIVED: "Đã nhận hàng",
   CANCELLED: "Đã huỷ",
-  IMPORTED: "Đã nhập kho",
 };
+
+/**
+ * Format tên hiển thị của variant theo cấu trúc:
+ * "[Tên SP] [option1] / [option2] / [option3]"
+ * Các option null/rỗng được bỏ qua — không để lỗi hiển thị.
+ * Ví dụ: "Ao Polo S / Đỏ", "Áo Hoodie", "Áo L".
+ */
+function formatVariantName(
+  productName: string,
+  option1: string | null,
+  option2: string | null,
+  option3: string | null,
+): string {
+  const opts = [option1, option2, option3]
+    .filter((o): o is string => Boolean(o && o.trim()))
+    .join(" / ");
+  return opts ? `${productName} ${opts}` : productName;
+}
+
+// ─── Searchable Product Dropdown ──────────────────────────────────────────────
 
 interface SearchableProductDropdownProps {
   value: string;
@@ -31,14 +60,23 @@ interface SearchableProductDropdownProps {
   selectedIds: string[];
 }
 
-function SearchableProductDropdown({ value, onChange, products, selectedIds }: SearchableProductDropdownProps) {
+function SearchableProductDropdown({
+  value,
+  onChange,
+  products,
+  selectedIds,
+}: SearchableProductDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      )
+        setIsOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -47,15 +85,25 @@ function SearchableProductDropdown({ value, onChange, products, selectedIds }: S
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q),
+    );
   }, [products, search]);
 
   const selectedProduct = products.find((p) => p.id === value);
 
   return (
     <div className={styles.dropdownContainer} ref={dropdownRef}>
-      <div className={styles.dropdownTrigger} onClick={() => setIsOpen(!isOpen)}>
-        <span>{selectedProduct ? `${selectedProduct.sku} - ${selectedProduct.name}` : "-- Chọn sản phẩm --"}</span>
+      <div
+        className={styles.dropdownTrigger}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>
+          {selectedProduct
+            ? `${selectedProduct.sku} - ${selectedProduct.name}`
+            : "-- Chọn sản phẩm (variant) --"}
+        </span>
         <i className={`fi fi-rr-angle-small-${isOpen ? "up" : "down"}`} />
       </div>
       {isOpen && (
@@ -65,7 +113,7 @@ function SearchableProductDropdown({ value, onChange, products, selectedIds }: S
             <input
               type="text"
               className={styles.dropdownSearchInput}
-              placeholder="Tìm sản phẩm (SKU, tên...)..."
+              placeholder="Tìm theo SKU hoặc tên sản phẩm..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -117,184 +165,374 @@ function SearchableProductDropdown({ value, onChange, products, selectedIds }: S
   );
 }
 
-type LineItem = ReceiptItem & { productId: string };
+// ─── Line Item Type ───────────────────────────────────────────────────────────
 
-const EMPTY_LINE: LineItem = { id: "", productId: "", sku: "", productName: "", quantity: 1, unitPrice: 0, totalPrice: 0 };
+interface LineItem {
+  _key: string; // key nội bộ để render danh sách
+  variantId: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+const EMPTY_LINE: LineItem = {
+  _key: "",
+  variantId: "",
+  sku: "",
+  productName: "",
+  quantity: 1,
+  unitPrice: 0,
+  lineTotal: 0,
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function PurchaseOrderPage() {
-  const { purchaseOrders, addPurchaseOrder, updatePurchaseOrderStatus, editPurchaseOrder, importOrder } = useWarehouseContext();
   const { showToast } = useToast();
 
+  // ── Dữ liệu master ────────────────────────────────────────────────────────
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Modal states
+  // ── Dữ liệu đơn hàng + phân trang ────────────────────────────────────────
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // ── Tìm kiếm ──────────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // ── Modal / Dialog states ─────────────────────────────────────────────────
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
-  const [confirmImport, setConfirmImport] = useState<string | null>(null);
+  const [confirmReceive, setConfirmReceive] = useState<string | null>(null);
+  const [confirmPending, setConfirmPending] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
-  const [confirmApprove, setConfirmApprove] = useState<string | null>(null);
 
-  // Create/Edit form state
+  // ── Form state ─────────────────────────────────────────────────────────────
   const [formSupplierId, setFormSupplierId] = useState("");
   const [formNote, setFormNote] = useState("");
-  const [formLines, setFormLines] = useState<LineItem[]>([{ ...EMPTY_LINE, id: "1" }]);
+  const [formLines, setFormLines] = useState<LineItem[]>([
+    { ...EMPTY_LINE, _key: "1" },
+  ]);
+  const [formSubmitting, setFormSubmitting] = useState(false);
 
+  // ── Load dữ liệu master (suppliers + products) ────────────────────────────
   useEffect(() => {
-    getSuppliersPage(1).then(async (first) => {
-      let all = [...first.items];
-      for (let p = 2; p <= first.totalPages; p++) {
-        const page = await getSuppliersPage(p);
-        all = all.concat(page.items);
-      }
-      setSuppliers(all.filter((s) => s.status === "active"));
-    }).catch(console.error);
+    getSuppliersPage(1)
+      .then(async (first) => {
+        let all = [...first.items];
+        for (let p = 2; p <= first.totalPages; p++) {
+          const page = await getSuppliersPage(p);
+          all = all.concat(page.items);
+        }
+        setSuppliers(all.filter((s) => s.status === "active"));
+      })
+      .catch(console.error);
 
-    getProductsPage(1).then(async (first) => {
-      let all = [...first.items];
-      for (let p = 2; p <= first.totalPages; p++) {
-        const page = await getProductsPage(p);
-        all = all.concat(page.items);
-      }
-      const flattened: Product[] = all
-        .filter((p) => !p.status || p.status.toUpperCase() === "ACTIVE")
-        .flatMap((p) =>
-          (p.variants || [])
-            .filter((v) => !v.status || v.status.toUpperCase() === "ACTIVE")
-            .map((v) => ({
-              id: String(v.id),
-              code: p.code,
-              sku: v.sku,
-              name: p.name,
-              category: p.category,
-              categoryLabel: p.categoryLabel,
-              importPrice: v.importPrice,
-              salePrice: v.salePrice,
-              unit: p.unit || "Cái",
-              stock: v.stock,
-              description: p.description,
-              image: p.image,
-              createdAt: p.createdAt,
-              updatedAt: p.updatedAt,
-              size: v.size,
-              color: v.color,
-              material: v.material,
-              variants: [],
-            }))
-        );
-      setProducts(flattened);
-    }).catch(console.error);
+    getProductsPage(1)
+      .then(async (first) => {
+        let all = [...first.items];
+        for (let p = 2; p <= first.totalPages; p++) {
+          const page = await getProductsPage(p);
+          all = all.concat(page.items);
+        }
+        // Flatten: mỗi variant thành một "product" entry để chọn trong dropdown
+        const flattened: Product[] = all
+          .filter((p) => !p.status || p.status.toUpperCase() === "ACTIVE")
+          .flatMap((p) =>
+            (p.variants || [])
+              .filter((v) => !v.status || v.status.toUpperCase() === "ACTIVE")
+              .map((v) => ({
+                id: String(v.id),
+                code: p.code,
+                sku: v.sku,
+                name: p.name,
+                category: p.category,
+                categoryLabel: p.categoryLabel,
+                importPrice: v.importPrice,
+                salePrice: v.salePrice,
+                unit: p.unit || "Cái",
+                stock: v.stock,
+                description: p.description,
+                image: p.image,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt,
+                size: v.size,
+                color: v.color,
+                material: v.material,
+                variants: [],
+              })),
+          );
+        setProducts(flattened);
+      })
+      .catch(console.error);
   }, []);
 
-  const supplierOptions = useMemo(() =>
-    suppliers.map((s) => ({ value: s.id && s.id !== "undefined" ? s.id : s.code, label: s.companyName })),
-    [suppliers]
+  // ── Debounce tìm kiếm ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset về trang 1 khi query thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedQuery]);
+
+  // ── Fetch danh sách đơn đặt hàng ─────────────────────────────────────────
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const data = await getPurchaseOrdersPage(
+          currentPage,
+          debouncedQuery || undefined,
+        );
+        setOrders(data.items);
+        setTotalElements(data.totalElements);
+        setPageSize(data.pageSize);
+      } catch (err) {
+        console.error("Failed to fetch purchase orders:", err);
+        showToast("Không thể tải danh sách đơn đặt hàng!", "error");
+        setOrders([]);
+        setTotalElements(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [currentPage, refreshTrigger, debouncedQuery, showToast]);
+
+  const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
+
+  // ── Helpers cho supplier dropdown ─────────────────────────────────────────
+  // Luôn dùng s.id (đã là chuỗi số nguyên hợp lệ sau khi mapper chạy String(s.id))
+  const supplierOptions = useMemo(
+    () =>
+      suppliers.map((s) => ({
+        value: s.id,
+        label: s.companyName,
+      })),
+    [suppliers],
   );
 
-  // ---- Line helpers ----
-  const updateLine = (idx: number, field: keyof LineItem, val: string | number) => {
-    if (field === "productId" && val) {
-      const isDuplicate = formLines.some((line, i) => i !== idx && line.productId === String(val));
+  // ── Helpers cho line items ────────────────────────────────────────────────
+  const updateLine = (
+    idx: number,
+    field: keyof LineItem,
+    val: string | number,
+  ) => {
+    if (field === "variantId" && val) {
+      const isDuplicate = formLines.some(
+        (line, i) => i !== idx && line.variantId === String(val),
+      );
       if (isDuplicate) {
         showToast("Sản phẩm này đã có trong danh sách đặt hàng", "warning");
         return;
       }
     }
 
-    setFormLines((prev) => prev.map((line, i) => {
-      if (i !== idx) return line;
-      if (field === "productId") {
-        const p = products.find((pr) => pr.id === String(val));
-        if (!p) return { ...line, productId: String(val) };
-        return { ...line, productId: p.id, sku: p.sku, productName: p.name, unitPrice: p.importPrice, totalPrice: p.importPrice * line.quantity };
-      }
-      const updated = { ...line, [field]: val };
-      if (field === "quantity" || field === "unitPrice") {
-        updated.totalPrice = (updated.quantity || 0) * (updated.unitPrice || 0);
-      }
-      return updated;
-    }));
+    setFormLines((prev) =>
+      prev.map((line, i) => {
+        if (i !== idx) return line;
+        if (field === "variantId") {
+          const p = products.find((pr) => pr.id === String(val));
+          if (!p) return { ...line, variantId: String(val) };
+          return {
+            ...line,
+            variantId: p.id,
+            sku: p.sku,
+            productName: p.name,
+            unitPrice: p.importPrice,
+            lineTotal: p.importPrice * line.quantity,
+          };
+        }
+        const updated = { ...line, [field]: val };
+        if (field === "quantity" || field === "unitPrice") {
+          updated.lineTotal =
+            (updated.quantity || 0) * (updated.unitPrice || 0);
+        }
+        return updated;
+      }),
+    );
   };
 
-  const addLine = () => setFormLines((prev) => [...prev, { ...EMPTY_LINE, id: String(Date.now()) }]);
-  const removeLine = (idx: number) => setFormLines((prev) => prev.filter((_, i) => i !== idx));
+  const addLine = () =>
+    setFormLines((prev) => [
+      ...prev,
+      { ...EMPTY_LINE, _key: String(Date.now()) },
+    ]);
 
-  const totalQty = useMemo(() => formLines.reduce((s, l) => s + (l.quantity || 0), 0), [formLines]);
-  const totalAmount = useMemo(() => formLines.reduce((s, l) => s + (l.totalPrice || 0), 0), [formLines]);
+  const removeLine = (idx: number) =>
+    setFormLines((prev) => prev.filter((_, i) => i !== idx));
+
+  const totalQty = useMemo(
+    () => formLines.reduce((s, l) => s + (l.quantity || 0), 0),
+    [formLines],
+  );
+  const totalAmount = useMemo(
+    () => formLines.reduce((s, l) => s + (l.lineTotal || 0), 0),
+    [formLines],
+  );
 
   const resetForm = () => {
     setFormSupplierId("");
     setFormNote("");
-    setFormLines([{ ...EMPTY_LINE, id: "1" }]);
+    setFormLines([{ ...EMPTY_LINE, _key: "1" }]);
   };
 
-  const openCreate = () => { resetForm(); setIsCreateOpen(true); };
+  const openCreate = () => {
+    resetForm();
+    setIsCreateOpen(true);
+  };
 
+  // Mở form sửa — nạp dữ liệu đơn hiện tại vào form
   const openEdit = (order: PurchaseOrder) => {
-    setEditingOrder(order);
     setFormSupplierId(order.supplierId);
     setFormNote(order.note);
-    setFormLines(order.items.map((item) => ({ ...item, productId: item.productId || "" })));
-  };
-
-  const handleCreate = () => {
-    if (!formSupplierId) { showToast("Vui lòng chọn nhà cung cấp", "warning"); return; }
-    const validLines = formLines.filter((l) => l.productId && l.quantity > 0);
-    if (validLines.length === 0) { showToast("Vui lòng thêm ít nhất một sản phẩm", "warning"); return; }
-    const supplierName = suppliers.find((s) => s.id === formSupplierId || s.code === formSupplierId)?.companyName ?? "";
-    addPurchaseOrder({
-      supplierId: formSupplierId,
-      supplierName,
-      items: validLines,
-      totalQuantity: totalQty,
-      totalAmount,
-      note: formNote,
-    });
-    showToast("Tạo đơn đặt hàng thành công!", "success");
-    setIsCreateOpen(false);
-    resetForm();
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingOrder) return;
-    if (!formSupplierId) { showToast("Vui lòng chọn nhà cung cấp", "warning"); return; }
-    const validLines = formLines.filter((l) => l.productId && l.quantity > 0);
-    if (validLines.length === 0) { showToast("Vui lòng thêm ít nhất một sản phẩm", "warning"); return; }
-    const supplierName = suppliers.find((s) => s.id === formSupplierId || s.code === formSupplierId)?.companyName ?? "";
-    editPurchaseOrder(editingOrder.id, {
-      supplierId: formSupplierId,
-      supplierName,
-      items: validLines,
-      totalQuantity: totalQty,
-      totalAmount,
-      note: formNote,
-    });
-    showToast("Đã cập nhật đơn đặt hàng!", "success");
-    setEditingOrder(null);
-    resetForm();
-  };
-
-  const handleApprove = (id: string) => {
-    updatePurchaseOrderStatus(id, "APPROVED");
-    showToast("Đã duyệt đơn đặt hàng!", "success");
-    setConfirmApprove(null);
-  };
-
-  const handleCancel = (id: string) => {
-    updatePurchaseOrderStatus(id, "CANCELLED");
-    showToast("Đã huỷ đơn đặt hàng!", "success");
-    setConfirmCancel(null);
-  };
-
-  const handleImport = (id: string) => {
-    importOrder(id);
-    showToast("Nhập kho thành công! Phiếu nhập kho đã được tạo.", "success");
-    setConfirmImport(null);
+    setFormLines(
+      order.details.map((d) => ({
+        _key: d.id,
+        variantId: d.variantId,
+        sku: d.sku,
+        productName: d.sku, // hiển thị SKU vì không có tên variant riêng trong detail
+        quantity: d.quantity,
+        unitPrice: d.unitPrice,
+        lineTotal: d.lineTotal,
+      })),
+    );
+    setEditingOrder(order);
     setDetailOrder(null);
   };
 
-  // Render form (create / edit)
+  // ── Tạo đơn đặt hàng ─────────────────────────────────────────────────────
+  const handleCreate = async () => {
+    if (!formSupplierId) {
+      showToast("Vui lòng chọn nhà cung cấp", "warning");
+      return;
+    }
+    const validLines = formLines.filter((l) => l.variantId && l.quantity > 0);
+    if (validLines.length === 0) {
+      showToast("Vui lòng thêm ít nhất một sản phẩm hợp lệ", "warning");
+      return;
+    }
+
+    // formSupplierId là chuỗi số nguyên hợp lệ (vd: "1", "2")
+    // do supplierOptions.value luôn dùng s.id = String(numericId)
+    const supplierIdNum = Number(formSupplierId);
+    if (!supplierIdNum || isNaN(supplierIdNum)) {
+      showToast("ID nhà cung cấp không hợp lệ, vui lòng chọn lại", "error");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const autoCode = `PO-${Date.now()}`;
+
+    const payload: PurchaseOrderCreateRequestDto = {
+      code: autoCode,
+      supplierId: supplierIdNum,
+      orderDate: now,
+      note: formNote || undefined,
+      details: validLines.map((l) => ({
+        variantId: Number(l.variantId),
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+      })),
+    };
+
+    try {
+      setFormSubmitting(true);
+      await createPurchaseOrder(payload);
+      showToast("Tạo đơn đặt hàng thành công!", "success");
+      setIsCreateOpen(false);
+      resetForm();
+      triggerRefresh();
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Không thể tạo đơn đặt hàng";
+      showToast(msg, "error");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  // ── Lưu chỉnh sửa đơn đặt hàng (chỉ DRAFT mới cho phép) ─────────────────
+  const handleSaveEdit = async () => {
+    if (!editingOrder) return;
+    if (!formSupplierId) {
+      showToast("Vui lòng chọn nhà cung cấp", "warning");
+      return;
+    }
+    const validLines = formLines.filter((l) => l.variantId && l.quantity > 0);
+    if (validLines.length === 0) {
+      showToast("Vui lòng thêm ít nhất một sản phẩm hợp lệ", "warning");
+      return;
+    }
+    const supplierIdNum = Number(formSupplierId);
+    if (!supplierIdNum || isNaN(supplierIdNum)) {
+      showToast("ID nhà cung cấp không hợp lệ, vui lòng chọn lại", "error");
+      return;
+    }
+    const payload: PurchaseOrderCreateRequestDto = {
+      code: editingOrder.code, // Giữ nguyên mã đơn gốc khi sửa
+      supplierId: supplierIdNum,
+      orderDate: editingOrder.orderDate,
+      note: formNote || undefined,
+      details: validLines.map((l) => ({
+        variantId: Number(l.variantId),
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+      })),
+    };
+    try {
+      setFormSubmitting(true);
+      await updatePurchaseOrder(editingOrder.id, payload);
+      showToast("Lưu thành công!", "success");
+      setEditingOrder(null);
+      resetForm();
+      triggerRefresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Không thể lưu đơn hàng";
+      showToast(msg, "error");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+
+  const handleUpdateStatus = async (
+    id: string,
+    status: PurchaseOrder["status"],
+  ) => {
+    const toastLabels: Partial<Record<PurchaseOrder["status"], string>> = {
+      PENDING: "Đã duyệt đơn hàng!",
+      RECEIVED: "Đã xác nhận nhận hàng!",
+      CANCELLED: "Đã huỷ đơn hàng!",
+    };
+    try {
+      await updatePurchaseOrderStatus(id, status);
+      showToast(toastLabels[status] ?? "Đã cập nhật trạng thái!", "success");
+      setConfirmReceive(null);
+      setConfirmPending(null);
+      setConfirmCancel(null);
+      setDetailOrder(null);
+      triggerRefresh();
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Không thể cập nhật trạng thái";
+      showToast(msg, "error");
+    }
+  };
+
+  // ─── Render form tạo đơn ──────────────────────────────────────────────────
   const renderForm = () => (
     <div className={styles.form}>
       <div className={styles.formRow}>
@@ -319,27 +557,32 @@ export function PurchaseOrderPage() {
       <div className={styles.itemsSection}>
         <div className={styles.itemsHeader}>
           <span className={styles.itemsLabel}>Danh sách hàng đặt</span>
-          <Button variant="ghost" size="sm" icon="fi fi-rr-add" onClick={addLine}>Thêm dòng</Button>
+          <Button variant="ghost" size="sm" icon="fi fi-rr-add" onClick={addLine}>
+            Thêm dòng
+          </Button>
         </div>
         <table className={styles.itemsTable}>
           <thead>
             <tr>
-              <th>Sản phẩm</th>
+              <th>Sản phẩm (Variant)</th>
               <th style={{ width: 80 }}>SL</th>
-              <th style={{ width: 120 }}>Đơn giá</th>
-              <th style={{ width: 120 }}>Thành tiền</th>
+              <th style={{ width: 140 }}>Đơn giá nhập</th>
+              <th style={{ width: 130 }}>Thành tiền</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
             {formLines.map((line, idx) => (
-              <tr key={line.id}>
+              <tr key={line._key}>
                 <td>
                   <SearchableProductDropdown
-                    value={line.productId}
-                    onChange={(val) => updateLine(idx, "productId", val)}
+                    value={line.variantId}
+                    onChange={(val) => updateLine(idx, "variantId", val)}
                     products={products}
-                    selectedIds={formLines.filter((_, i) => i !== idx).map((l) => l.productId).filter(Boolean)}
+                    selectedIds={formLines
+                      .filter((_, i) => i !== idx)
+                      .map((l) => l.variantId)
+                      .filter(Boolean)}
                   />
                 </td>
                 <td>
@@ -348,24 +591,37 @@ export function PurchaseOrderPage() {
                     min={1}
                     className={styles.lineInput}
                     value={line.quantity}
-                    onChange={(e) => updateLine(idx, "quantity", Number(e.target.value))}
+                    onChange={(e) =>
+                      updateLine(idx, "quantity", Number(e.target.value))
+                    }
                   />
                 </td>
                 <td>
                   <input
                     type="text"
                     className={styles.lineInput}
-                    value={line.unitPrice ? new Intl.NumberFormat("vi-VN").format(line.unitPrice) : ""}
+                    value={
+                      line.unitPrice
+                        ? new Intl.NumberFormat("vi-VN").format(line.unitPrice)
+                        : ""
+                    }
                     readOnly
-                    style={{ backgroundColor: "var(--color-bg)", color: "var(--color-subtext)", cursor: "not-allowed" }}
+                    style={{
+                      backgroundColor: "var(--color-bg)",
+                      color: "var(--color-subtext)",
+                      cursor: "not-allowed",
+                    }}
                   />
                 </td>
                 <td style={{ fontWeight: 600, color: "var(--color-primary)" }}>
-                  {line.totalPrice ? formatCurrency(line.totalPrice) : "—"}
+                  {line.lineTotal ? formatCurrency(line.lineTotal) : "—"}
                 </td>
                 <td>
                   {formLines.length > 1 && (
-                    <button className={styles.removeItemBtn} onClick={() => removeLine(idx)}>
+                    <button
+                      className={styles.removeItemBtn}
+                      onClick={() => removeLine(idx)}
+                    >
                       <i className="fi fi-rr-trash" />
                     </button>
                   )}
@@ -378,7 +634,7 @@ export function PurchaseOrderPage() {
     </div>
   );
 
-  // Render detail view
+  // ─── Render detail modal ───────────────────────────────────────────────────
   const renderDetail = (order: PurchaseOrder) => (
     <div className={styles.detailSection}>
       <div className={styles.detailHeader}>
@@ -387,34 +643,65 @@ export function PurchaseOrderPage() {
           <div className={styles.detailSupplier}>{order.supplierName}</div>
         </div>
         <span className={[styles.badge, styles[order.status]].join(" ")}>
-          {ORDER_STATUS_LABEL[order.status]}
+          {ORDER_STATUS_LABEL[order.status] ?? order.status}
         </span>
       </div>
 
       <div className={styles.detailMeta}>
-        <span>Ngày tạo: {formatDate(order.createdAt)}</span>
-        {order.approvedAt && <span>Ngày duyệt: {formatDate(order.approvedAt)}</span>}
-        {order.note && <span>Ghi chú: {order.note}</span>}
+        <span>
+          <i className="fi fi-rr-calendar" style={{ marginRight: 4 }} />
+          Ngày đặt hàng: {formatDateTime(order.orderDate)}
+        </span>
+        {order.receivedDate && (
+          <span>
+            <i className="fi fi-rr-box-check" style={{ marginRight: 4 }} />
+            Ngày nhận hàng: {formatDateTime(order.receivedDate)}
+          </span>
+        )}
+        <span>
+          <i className="fi fi-rr-user" style={{ marginRight: 4 }} />
+          Người tạo: {order.createdByName}
+        </span>
+        {order.note && (
+          <span>
+            <i className="fi fi-rr-note" style={{ marginRight: 4 }} />
+            Ghi chú: {order.note}
+          </span>
+        )}
       </div>
 
       <table className={styles.readonlyTable}>
         <thead>
           <tr>
-            <th>Sản phẩm</th>
-            <th>SKU</th>
-            <th style={{ width: 80, textAlign: "right" }}>SL</th>
+            <th>Tên sản phẩm</th>
+            <th style={{ width: 60, textAlign: "right" }}>SL</th>
             <th style={{ width: 130, textAlign: "right" }}>Đơn giá</th>
             <th style={{ width: 130, textAlign: "right" }}>Thành tiền</th>
           </tr>
         </thead>
         <tbody>
-          {order.items.map((item) => (
+          {order.details.map((item) => (
             <tr key={item.id}>
-              <td>{item.productName}</td>
-              <td style={{ color: "var(--color-subtext)", fontSize: "0.8rem" }}>{item.sku}</td>
+              <td>
+                <div style={{ fontWeight: 500, fontSize: "0.85rem" }}>
+                  {formatVariantName(
+                    item.productName,
+                    item.option1Value,
+                    item.option2Value,
+                    item.option3Value,
+                  )}
+                </div>
+                <div style={{ color: "var(--color-subtext)", fontSize: "0.75rem", marginTop: 2 }}>
+                  {item.sku}
+                </div>
+              </td>
               <td style={{ textAlign: "right" }}>{item.quantity}</td>
-              <td style={{ textAlign: "right" }}>{formatCurrency(item.unitPrice)}</td>
-              <td style={{ textAlign: "right" }} className={styles.amountCell}>{formatCurrency(item.totalPrice)}</td>
+              <td style={{ textAlign: "right" }}>
+                {formatCurrency(item.unitPrice)}
+              </td>
+              <td style={{ textAlign: "right" }} className={styles.amountCell}>
+                {formatCurrency(item.lineTotal)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -422,168 +709,299 @@ export function PurchaseOrderPage() {
 
       <div className={styles.detailTotal}>
         <span>Tổng tiền:</span>
-        <span className={styles.detailTotalAmount}>{formatCurrency(order.totalAmount)}</span>
+        <span className={styles.detailTotalAmount}>
+          {formatCurrency(order.totalAmount)}
+        </span>
       </div>
 
+      {/* Footer: ẩn hết nút hành động khi đơn đã RECEIVED */}
       <div className={styles.modalFooter}>
-        <Button variant="secondary" onClick={() => setDetailOrder(null)}>Đóng</Button>
-        {order.status === "PENDING" && (
+        <Button variant="secondary" onClick={() => setDetailOrder(null)}>
+          Đóng
+        </Button>
+        {order.status !== "RECEIVED" && (
           <>
-            <Button variant="secondary" icon="fi fi-rr-edit" onClick={() => { setDetailOrder(null); openEdit(order); }}>Chỉnh sửa</Button>
-            <Button variant="danger" icon="fi fi-rr-cross-circle" onClick={() => { setDetailOrder(null); setConfirmCancel(order.id); }}>Huỷ đơn</Button>
-            <Button icon="fi fi-rr-check" onClick={() => { setDetailOrder(null); setConfirmApprove(order.id); }}>Duyệt đơn</Button>
-          </>
-        )}
-        {order.status === "APPROVED" && (
-          <>
-            <Button variant="secondary" icon="fi fi-rr-edit" onClick={() => { setDetailOrder(null); openEdit(order); }}>Chỉnh sửa</Button>
-            <Button variant="danger" icon="fi fi-rr-cross-circle" onClick={() => { setDetailOrder(null); setConfirmCancel(order.id); }}>Huỷ đơn</Button>
-            <Button icon="fi fi-rr-boxes" onClick={() => { setDetailOrder(null); setConfirmImport(order.id); }}>Nhập kho</Button>
+            {/* Nút Sửa — chỉ hiển thị khi đơn ở trạng thái DRAFT */}
+            {order.status === "DRAFT" && (
+              <Button
+                variant="secondary"
+                icon="fi fi-rr-edit"
+                onClick={() => openEdit(order)}
+              >
+                Sửa
+              </Button>
+            )}
+
+            {/* Nút Duyệt (DRAFT) hoặc Nhập hàng (PENDING) */}
+            {order.status === "DRAFT" && (
+              <Button
+                icon="fi fi-rr-check"
+                onClick={() => {
+                  setDetailOrder(null);
+                  setConfirmPending(order.id);
+                }}
+              >
+                Duyệt
+              </Button>
+            )}
+            {order.status === "PENDING" && (
+              <Button
+                icon="fi fi-rr-box-check"
+                onClick={() => {
+                  setDetailOrder(null);
+                  setConfirmReceive(order.id);
+                }}
+              >
+                Nhập hàng
+              </Button>
+            )}
+
+            {/* Nút Huỷ đơn */}
+            {order.status !== "CANCELLED" && (
+              <Button
+                variant="danger"
+                icon="fi fi-rr-cross-circle"
+                onClick={() => {
+                  setDetailOrder(null);
+                  setConfirmCancel(order.id);
+                }}
+              >
+                Huỷ đơn
+              </Button>
+            )}
           </>
         )}
       </div>
     </div>
   );
 
+  // ─── Table columns ─────────────────────────────────────────────────────────
   const columns: TableColumn<PurchaseOrder>[] = [
-    { key: "code", label: "Mã đơn", width: "150px" },
+    { key: "code", label: "Mã đơn", width: "140px" },
     { key: "supplierName", label: "Nhà cung cấp" },
     {
-      key: "totalQuantity",
-      label: "Tổng SL",
+      key: "details",
+      label: "SL Đặt",
       width: "90px",
       align: "center",
-      render: (val) => <strong>{val as number}</strong>,
+      render: (val) => {
+        const details = val as PurchaseOrder["details"];
+        const total = details.reduce((s, d) => s + d.quantity, 0);
+        return <span style={{ fontWeight: 600 }}>{total}</span>;
+      },
     },
     {
       key: "totalAmount",
       label: "Tổng tiền",
       width: "140px",
       align: "right",
-      render: (val) => <strong style={{ color: "var(--color-primary)" }}>{formatCurrency(val as number)}</strong>,
+      render: (val) => (
+        <strong style={{ color: "var(--color-primary)" }}>
+          {formatCurrency(val as number)}
+        </strong>
+      ),
     },
     {
       key: "status",
       label: "Trạng thái",
-      width: "140px",
+      width: "120px",
       align: "center",
       render: (val) => (
         <span className={[styles.badge, styles[val as string]].join(" ")}>
-          {ORDER_STATUS_LABEL[val as string]}
+          {ORDER_STATUS_LABEL[val as string] ?? (val as string)}
         </span>
       ),
     },
     {
-      key: "createdAt",
-      label: "Ngày tạo",
+      key: "orderDate",
+      label: "Ngày đặt",
       width: "110px",
-      render: (val) => formatDate(val as string),
+      render: (val) => formatDateTime(val as string),
     },
     {
       key: "id",
       label: "Hành động",
-      width: "260px",
+      width: "100px",
       align: "center",
       render: (_, row) => (
         <div className={styles.actionBtns} style={{ justifyContent: "center" }}>
-          <Button variant="ghost" size="sm" icon="fi fi-rr-eye" onClick={() => setDetailOrder(row)}>Xem</Button>
-          {row.status === "PENDING" && (
-            <>
-              <Button variant="ghost" size="sm" icon="fi fi-rr-check" onClick={() => setConfirmApprove(row.id)}>Duyệt</Button>
-              <Button variant="danger" size="sm" icon="fi fi-rr-cross-circle" onClick={() => setConfirmCancel(row.id)}>Huỷ</Button>
-            </>
-          )}
-          {row.status === "APPROVED" && (
-            <Button size="sm" icon="fi fi-rr-boxes" onClick={() => setConfirmImport(row.id)}>Nhập kho</Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="fi fi-rr-eye"
+            onClick={() => setDetailOrder(row)}
+          >
+            Xem
+          </Button>
         </div>
       ),
     },
   ];
 
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <section>
       <div className={styles.container}>
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>Đơn đặt hàng</h2>
-            <p className={styles.subtitle}>{purchaseOrders.length} đơn</p>
+            <p className={styles.subtitle}>{totalElements} đơn</p>
           </div>
-          <Button icon="fi fi-rr-add" onClick={openCreate}>Tạo đơn đặt hàng</Button>
+          <Button icon="fi fi-rr-add" onClick={openCreate}>
+            Tạo đơn đặt hàng
+          </Button>
+        </div>
+
+        {/* Search */}
+        <div style={{ maxWidth: 340 }}>
+          <Input
+            id="po-search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm theo mã đơn, nhà cung cấp..."
+          />
         </div>
 
         <Card>
           <CardHeader title="Danh sách đơn đặt hàng" />
           <CardBody className={styles.tableCardBody}>
-            <Table columns={columns} data={purchaseOrders} rowKey="id" emptyText="Chưa có đơn đặt hàng nào" />
+            <Table
+              columns={columns}
+              data={orders}
+              rowKey="id"
+              loading={loading}
+              emptyText="Chưa có đơn đặt hàng nào"
+            />
           </CardBody>
         </Card>
+
+        {totalElements > 0 && (
+          <Pagination
+            pagination={{ page: currentPage, pageSize, total: totalElements }}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       {/* Create modal */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Tạo đơn đặt hàng mới" size="xxl">
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Tạo đơn đặt hàng mới"
+        size="xxl"
+      >
         {renderForm()}
         <div className={styles.modalFooter}>
           <div className={styles.footerSummary}>
-            Tổng số lượng: <strong style={{ color: "var(--color-text)" }}>{totalQty}</strong>
-            <span style={{ margin: "0 12px", color: "var(--color-border)" }}>|</span>
-            Tổng tiền: <strong className={styles.footerTotalAmount}>{formatCurrency(totalAmount)}</strong>
+            Tổng số lượng:{" "}
+            <strong style={{ color: "var(--color-text)" }}>{totalQty}</strong>
+            <span style={{ margin: "0 12px", color: "var(--color-border)" }}>
+              |
+            </span>
+            Tổng tiền:{" "}
+            <strong className={styles.footerTotalAmount}>
+              {formatCurrency(totalAmount)}
+            </strong>
           </div>
-          <Button variant="secondary" onClick={() => setIsCreateOpen(false)}>Huỷ</Button>
-          <Button icon="fi fi-rr-check" onClick={handleCreate}>Tạo đơn</Button>
-        </div>
-      </Modal>
-
-      {/* Edit modal */}
-      <Modal isOpen={!!editingOrder} onClose={() => { setEditingOrder(null); resetForm(); }} title={`Chỉnh sửa đơn ${editingOrder?.code ?? ""}`} size="xxl">
-        {renderForm()}
-        <div className={styles.modalFooter}>
-          <div className={styles.footerSummary}>
-            Tổng số lượng: <strong style={{ color: "var(--color-text)" }}>{totalQty}</strong>
-            <span style={{ margin: "0 12px", color: "var(--color-border)" }}>|</span>
-            Tổng tiền: <strong className={styles.footerTotalAmount}>{formatCurrency(totalAmount)}</strong>
-          </div>
-          <Button variant="secondary" onClick={() => { setEditingOrder(null); resetForm(); }}>Huỷ</Button>
-          <Button icon="fi fi-rr-check" onClick={handleSaveEdit}>Lưu thay đổi</Button>
+          <Button
+            variant="secondary"
+            onClick={() => setIsCreateOpen(false)}
+            disabled={formSubmitting}
+          >
+            Huỷ
+          </Button>
+          <Button
+            icon="fi fi-rr-check"
+            onClick={handleCreate}
+            disabled={formSubmitting}
+          >
+            {formSubmitting ? "Đang tạo..." : "Tạo đơn"}
+          </Button>
         </div>
       </Modal>
 
       {/* Detail modal */}
-      <Modal isOpen={!!detailOrder} onClose={() => setDetailOrder(null)} title={`Chi tiết đơn đặt hàng`} size="lg">
+      <Modal
+        isOpen={!!detailOrder}
+        onClose={() => setDetailOrder(null)}
+        title="Chi tiết đơn đặt hàng"
+        size="lg"
+      >
         {detailOrder && renderDetail(detailOrder)}
       </Modal>
 
-      {/* Confirm approve */}
+      {/* Edit modal */}
+      <Modal
+        isOpen={!!editingOrder}
+        onClose={() => { setEditingOrder(null); resetForm(); }}
+        title={`Sửa đơn đặt hàng – ${editingOrder?.code ?? ""}`}
+        size="xxl"
+      >
+        {renderForm()}
+        <div className={styles.modalFooter}>
+          <div className={styles.footerSummary}>
+            Tổng số lượng:{" "}
+            <strong style={{ color: "var(--color-text)" }}>{totalQty}</strong>
+            <span style={{ margin: "0 12px", color: "var(--color-border)" }}>|</span>
+            Tổng tiền:{" "}
+            <strong className={styles.footerTotalAmount}>
+              {formatCurrency(totalAmount)}
+            </strong>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => { setEditingOrder(null); resetForm(); }}
+            disabled={formSubmitting}
+          >
+            Huỷ
+          </Button>
+          <Button
+            icon="fi fi-rr-check"
+            onClick={handleSaveEdit}
+            disabled={formSubmitting}
+          >
+            {formSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Confirm duyệt đơn (DRAFT → PENDING) */}
       <ConfirmDialog
-        isOpen={!!confirmApprove}
+        isOpen={!!confirmPending}
         title="Duyệt đơn đặt hàng?"
-        message="Sau khi duyệt, đơn hàng sẽ chuyển sang trạng thái Đã duyệt và sẵn sàng để nhập hàng."
+        message="Đơn hàng sẽ chuyển sang trạng thái 'Chờ nhập' và không thể chỉnh sửa. Bạn có chắc chắn?"
         confirmLabel="Duyệt đơn"
         cancelLabel="Huỷ"
-        onConfirm={() => confirmApprove && handleApprove(confirmApprove)}
-        onCancel={() => setConfirmApprove(null)}
+        onConfirm={() =>
+          confirmPending && handleUpdateStatus(confirmPending, "PENDING")
+        }
+        onCancel={() => setConfirmPending(null)}
       />
 
-      {/* Confirm cancel */}
+      {/* Confirm nhập hàng (PENDING → RECEIVED) */}
+      <ConfirmDialog
+        isOpen={!!confirmReceive}
+        title="Xác nhận nhập hàng?"
+        message="Sau khi xác nhận, trạng thái đơn sẽ chuyển thành 'Đã nhận hàng' và tồn kho sẽ được cập nhật."
+        confirmLabel="Nhập hàng"
+        cancelLabel="Huỷ"
+        onConfirm={() =>
+          confirmReceive && handleUpdateStatus(confirmReceive, "RECEIVED")
+        }
+        onCancel={() => setConfirmReceive(null)}
+      />
+
+      {/* Confirm huỷ đơn */}
       <ConfirmDialog
         isOpen={!!confirmCancel}
         title="Huỷ đơn đặt hàng?"
         message="Đơn hàng sẽ bị huỷ và không thể khôi phục. Bạn có chắc chắn?"
         confirmLabel="Xác nhận huỷ"
         cancelLabel="Không"
-        onConfirm={() => confirmCancel && handleCancel(confirmCancel)}
+        onConfirm={() =>
+          confirmCancel && handleUpdateStatus(confirmCancel, "CANCELLED")
+        }
         onCancel={() => setConfirmCancel(null)}
-      />
-
-      {/* Confirm import */}
-      <ConfirmDialog
-        isOpen={!!confirmImport}
-        title="Xác nhận nhập kho?"
-        message="Sau khi nhập kho, đơn này sẽ không thể chỉnh sửa. Một phiếu nhập kho sẽ được tự động tạo ra."
-        confirmLabel="Nhập kho"
-        cancelLabel="Huỷ"
-        onConfirm={() => confirmImport && handleImport(confirmImport)}
-        onCancel={() => setConfirmImport(null)}
       />
     </section>
   );

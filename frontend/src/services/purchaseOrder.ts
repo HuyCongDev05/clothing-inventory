@@ -1,0 +1,233 @@
+import { apiFetch } from "./api";
+import type { ApiResponse } from "../types/common.types";
+import type {
+  PurchaseOrder,
+  PurchaseOrderStatus,
+} from "../types/purchaseOrder.types";
+
+// ─── Backend DTO Interfaces ───────────────────────────────────────────────────
+
+/** Ánh xạ PurchaseOrderDetailResponseDto */
+export interface BackendPurchaseOrderDetailResponse {
+  id: number;
+  variantId: number;
+  sku: string;
+  productName: string;
+  option1Value: string | null;
+  option2Value: string | null;
+  option3Value: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+/** Ánh xạ PurchaseOrderResponseDto */
+export interface BackendPurchaseOrderResponse {
+  id: number;
+  code: string;
+  supplierId: number;
+  supplierName: string;
+  createdById: number;
+  createdByName: string;
+  orderDate: string;
+  receivedDate: string | null;
+  totalAmount: number;
+  paymentStatus: string;
+  status: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+  details: BackendPurchaseOrderDetailResponse[];
+}
+
+/**
+ * Ánh xạ PageResponseDto<PurchaseOrderResponseDto>.
+ * Backend trả trực tiếp object này bên trong trường `data` của ApiResponse.
+ */
+export interface PaginatedPurchaseOrdersResponse {
+  items: BackendPurchaseOrderResponse[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** Kiểu dữ liệu phân trang đã map sang frontend */
+export interface PaginatedPurchaseOrders {
+  items: PurchaseOrder[];
+  page: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** Request body để tạo đơn đặt hàng — ánh xạ PurchaseOrderRequestDto */
+export interface PurchaseOrderCreateRequestDto {
+  code: string;
+  supplierId: number;
+  orderDate: string;
+  note?: string;
+  details: {
+    variantId: number;
+    quantity: number;
+    unitPrice: number;
+  }[];
+}
+
+/** Request body để cập nhật trạng thái — ánh xạ PurchaseOrderStatusUpdateRequestDto */
+export interface PurchaseOrderStatusUpdateDto {
+  status: PurchaseOrderStatus;
+}
+
+// ─── Mapper Function ──────────────────────────────────────────────────────────
+
+export function mapBackendOrderToFrontend(
+  o: BackendPurchaseOrderResponse,
+): PurchaseOrder {
+  return {
+    id: String(o.id),
+    code: o.code,
+    supplierId: String(o.supplierId),
+    supplierName: o.supplierName,
+    createdById: String(o.createdById),
+    createdByName: o.createdByName,
+    orderDate: o.orderDate || "",
+    receivedDate: o.receivedDate ?? null,
+    totalAmount: Number(o.totalAmount) || 0,
+    paymentStatus: (o.paymentStatus as PurchaseOrder["paymentStatus"]) ?? "UNPAID",
+    status: (o.status as PurchaseOrder["status"]) ?? "DRAFT",
+    note: o.note || "",
+    createdAt: o.createdAt || "",
+    updatedAt: o.updatedAt || "",
+    details: (o.details || []).map((d) => ({
+      id: String(d.id),
+      variantId: String(d.variantId),
+      sku: d.sku,
+      productName: d.productName || "",
+      option1Value: d.option1Value ?? null,
+      option2Value: d.option2Value ?? null,
+      option3Value: d.option3Value ?? null,
+      quantity: d.quantity,
+      unitPrice: Number(d.unitPrice) || 0,
+      lineTotal: Number(d.lineTotal) || 0,
+    })),
+  };
+}
+
+// ─── Service Functions ────────────────────────────────────────────────────────
+
+/**
+ * Lấy danh sách đơn đặt hàng theo trang.
+ * Backend: GET /purchase-orders?page=&keyword=
+ * Response: ApiResponse<PageResponseDto<PurchaseOrderResponseDto>>
+ */
+export async function getPurchaseOrdersPage(
+  page: number,
+  keyword?: string,
+): Promise<PaginatedPurchaseOrders> {
+  const url = keyword
+    ? `/purchase-orders?page=${page}&keyword=${encodeURIComponent(keyword)}`
+    : `/purchase-orders?page=${page}`;
+
+  const response = await apiFetch<ApiResponse<PaginatedPurchaseOrdersResponse>>(url);
+  const data = response.data;
+
+  return {
+    items: (data.items || []).map(mapBackendOrderToFrontend),
+    page: data.page,
+    pageSize: data.size,
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+  };
+}
+
+/**
+ * Lấy danh sách phiếu nhập kho (đơn có status = RECEIVED) theo trang.
+ * Backend: GET /purchase-orders/received?page=&keyword=
+ * Response: ApiResponse<PageResponseDto<PurchaseOrderResponseDto>>
+ */
+export async function getReceivedPurchaseOrdersPage(
+  page: number,
+  keyword?: string,
+): Promise<PaginatedPurchaseOrders> {
+  const url = keyword
+    ? `/purchase-orders/received?page=${page}&keyword=${encodeURIComponent(keyword)}`
+    : `/purchase-orders/received?page=${page}`;
+
+  const response = await apiFetch<ApiResponse<PaginatedPurchaseOrdersResponse>>(url);
+  const data = response.data;
+
+  return {
+    items: (data.items || []).map(mapBackendOrderToFrontend),
+    page: data.page,
+    pageSize: data.size,
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+  };
+}
+
+/**
+ * Lấy chi tiết một đơn đặt hàng theo id.
+ * Backend: GET /purchase-orders/{id}
+ * Response: ApiResponse<PurchaseOrderResponseDto>
+ */
+export async function getPurchaseOrderById(
+  id: string,
+): Promise<PurchaseOrder> {
+  const response = await apiFetch<ApiResponse<BackendPurchaseOrderResponse>>(
+    `/purchase-orders/${id}`,
+  );
+  return mapBackendOrderToFrontend(response.data);
+}
+
+/**
+ * Sửa đơn đặt hàng (chỉ được phép khi trạng thái là DRAFT).
+ * Backend: PUT /purchase-orders/{id}
+ * Response: ApiResponse<PurchaseOrderResponseDto>
+ */
+export async function updatePurchaseOrder(
+  id: string,
+  payload: PurchaseOrderCreateRequestDto,
+): Promise<PurchaseOrder> {
+  const response = await apiFetch<ApiResponse<BackendPurchaseOrderResponse>>(
+    `/purchase-orders/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    },
+  );
+  return mapBackendOrderToFrontend(response.data);
+}
+
+
+export async function createPurchaseOrder(
+  payload: PurchaseOrderCreateRequestDto,
+): Promise<PurchaseOrder> {
+  const response = await apiFetch<ApiResponse<BackendPurchaseOrderResponse>>(
+    "/purchase-orders",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+  return mapBackendOrderToFrontend(response.data);
+}
+
+/**
+ * Cập nhật trạng thái đơn đặt hàng.
+ * Backend: PATCH /purchase-orders/{id}/status
+ * Response: ApiResponse<PurchaseOrderResponseDto>
+ */
+export async function updatePurchaseOrderStatus(
+  id: string,
+  status: PurchaseOrderStatus,
+): Promise<PurchaseOrder> {
+  const response = await apiFetch<ApiResponse<BackendPurchaseOrderResponse>>(
+    `/purchase-orders/${id}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status } satisfies PurchaseOrderStatusUpdateDto),
+    },
+  );
+  return mapBackendOrderToFrontend(response.data);
+}

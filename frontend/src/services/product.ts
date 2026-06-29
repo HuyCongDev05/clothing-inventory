@@ -1,13 +1,6 @@
 import { apiFetch } from "./api";
 import type { Product, ProductCategory, Variant } from "../types/product.types";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  data: T;
-  timestamp: string;
-}
+import type { ApiResponse } from "../types/common.types";
 
 export interface VariantResponseDto {
   id: number;

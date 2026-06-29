@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class SupplierResponseDto {
+    private Long id;
     private String code;
     private String name;
     private String contactPerson;
@@ -19,3 +20,4 @@ public class SupplierResponseDto {
     private LocalDateTime updatedAt;
 
 }
+

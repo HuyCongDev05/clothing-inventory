@@ -1,6 +1,7 @@
 package com.example.backend.repository;
 
 import com.example.backend.model.PurchaseOrder;
+import com.example.backend.model.enums.PurchaseOrderStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,4 +29,13 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
             "LOWER(po.code) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<PurchaseOrder> search(@Param("keyword") String keyword, Pageable pageable);
+
+    Page<PurchaseOrder> findAllByStatus(PurchaseOrderStatus status, Pageable pageable);
+
+    @Query("SELECT po FROM PurchaseOrder po JOIN po.supplier s WHERE po.status = :status AND (" +
+            "LOWER(po.code) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<PurchaseOrder> searchByStatus(@Param("keyword") String keyword,
+                                       @Param("status") PurchaseOrderStatus status,
+                                       Pageable pageable);
 }

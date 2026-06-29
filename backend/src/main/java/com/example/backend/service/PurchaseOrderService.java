@@ -53,6 +53,18 @@ public class PurchaseOrderService {
         return PageResponseDto.from(dtoPage);
     }
 
+    /** Lấy danh sách phiếu nhập kho — chỉ các đơn có status = RECEIVED */
+    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword, Pageable pageable) {
+        Page<PurchaseOrder> purchaseOrderPage;
+        if (StringUtils.hasText(keyword)) {
+            purchaseOrderPage = purchaseOrderRepository.searchByStatus(keyword, PurchaseOrderStatus.RECEIVED, pageable);
+        } else {
+            purchaseOrderPage = purchaseOrderRepository.findAllByStatus(PurchaseOrderStatus.RECEIVED, pageable);
+        }
+        Page<PurchaseOrderResponseDto> dtoPage = purchaseOrderPage.map(this::buildResponseWithDetails);
+        return PageResponseDto.from(dtoPage);
+    }
+
     public PurchaseOrderResponseDto getPurchaseOrderById(Long id) {
         PurchaseOrder order = purchaseOrderRepository.findById(id)
                 .orElseThrow(() -> new InvalidException(ErrorCode.PURCHASE_ORDER_NOT_FOUND));
@@ -148,8 +160,11 @@ public class PurchaseOrderService {
     }
 
     private void validateStatusTransition(PurchaseOrderStatus current, PurchaseOrderStatus next) {
-        boolean valid = (current == PurchaseOrderStatus.DRAFT && next == PurchaseOrderStatus.PENDING)
-                || (current == PurchaseOrderStatus.PENDING && next == PurchaseOrderStatus.RECEIVED);
+        boolean valid =
+                (current == PurchaseOrderStatus.DRAFT    && next == PurchaseOrderStatus.PENDING)
+             || (current == PurchaseOrderStatus.PENDING  && next == PurchaseOrderStatus.RECEIVED)
+             || (current == PurchaseOrderStatus.DRAFT    && next == PurchaseOrderStatus.CANCELLED)
+             || (current == PurchaseOrderStatus.PENDING  && next == PurchaseOrderStatus.CANCELLED);
 
         if (!valid) {
             throw new InvalidException(ErrorCode.INVALID_PURCHASE_ORDER_STATUS_TRANSITION);
@@ -172,6 +187,37 @@ public class PurchaseOrderService {
             details.add(detail);
         }
         return details;
+    }
+
+    /** Sửa đơn đặt hàng — chỉ cho phép khi đơn ở trạng thái DRAFT */
+    @Transactional
+    public PurchaseOrderResponseDto updatePurchaseOrder(Long id, PurchaseOrderRequestDto request) {
+        PurchaseOrder order = purchaseOrderRepository.findById(id)
+                .orElseThrow(() -> new InvalidException(ErrorCode.PURCHASE_ORDER_NOT_FOUND));
+
+        if (order.getStatus() != PurchaseOrderStatus.DRAFT) {
+            throw new InvalidException(ErrorCode.PURCHASE_ORDER_CANNOT_BE_MODIFIED);
+        }
+
+        Supplier supplier = supplierRepository.findById(request.getSupplierId())
+                .orElseThrow(() -> new InvalidException(ErrorCode.SUPPLIER_NOT_FOUND));
+
+        order.setSupplier(supplier);
+        order.setNote(request.getNote());
+
+        // Xoá toàn bộ detail cũ, thay bằng detail mới
+        purchaseOrderDetailRepository.deleteByPurchaseOrderId(order.getId());
+
+        List<PurchaseOrderDetail> newDetails = buildDetails(request.getDetails(), order);
+        purchaseOrderDetailRepository.saveAll(newDetails);
+
+        BigDecimal totalAmount = newDetails.stream()
+                .map(d -> d.getUnitPrice().multiply(BigDecimal.valueOf(d.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setTotalAmount(totalAmount);
+        PurchaseOrder saved = purchaseOrderRepository.save(order);
+        return buildResponseWithDetails(saved);
     }
 
     private PurchaseOrderResponseDto buildResponseWithDetails(PurchaseOrder order) {
