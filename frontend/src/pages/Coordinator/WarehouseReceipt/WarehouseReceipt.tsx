@@ -257,7 +257,7 @@ function PaymentModal({
     {
       key: "amount",
       label: "Số tiền",
-      align: "right",
+      align: "left",
       render: (val) => (
         <strong style={{ color: "var(--color-success)" }}>
           {formatCurrency(val as number)}
@@ -267,7 +267,7 @@ function PaymentModal({
     {
       key: "remainingAmount",
       label: "Còn lại",
-      align: "right",
+      align: "left",
       render: (val) => (
         <span style={{ color: "var(--color-danger)" }}>
           {formatCurrency(val as number)}
@@ -674,6 +674,12 @@ export function WarehouseReceiptPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  // ── Sắp xếp ──────────────────────────────────────────────────────────────
+  type SortField = "totalQuantity" | "totalAmount" | "receivedDate";
+  type SortDirection = "asc" | "desc";
+  const [sortField, setSortField] = useState<SortField>("receivedDate");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
   // ── Tìm kiếm ─────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -693,6 +699,11 @@ export function WarehouseReceiptPage() {
     setCurrentPage(1);
   }, [debouncedQuery]);
 
+  // Reset về trang 1 khi sort thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortField, sortDirection]);
+
   // ── Fetch danh sách phiếu nhập kho ───────────────────────────────────────
   const fetchReceipts = useCallback(async () => {
     try {
@@ -700,6 +711,8 @@ export function WarehouseReceiptPage() {
       const data = await getReceivedPurchaseOrdersPage(
         currentPage,
         debouncedQuery || undefined,
+        sortField,
+        sortDirection,
       );
       setReceipts(data.items);
       setTotalElements(data.totalElements);
@@ -712,7 +725,7 @@ export function WarehouseReceiptPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedQuery, showToast]);
+  }, [currentPage, debouncedQuery, sortField, sortDirection, showToast]);
 
   useEffect(() => {
     fetchReceipts();
@@ -739,24 +752,47 @@ export function WarehouseReceiptPage() {
     [],
   );
 
+  // ── Sort handler ──────────────────────────────────────────────────────────
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
+    <span className={styles.sortableHeader} onClick={() => handleSort(field)}>
+      {label}
+      <i
+        className={[
+          "fi",
+          sortField === field
+            ? sortDirection === "desc"
+              ? "fi-rr-angle-small-down"
+              : "fi-rr-angle-small-up"
+            : "fi-rr-sort-alt",
+          sortField === field ? styles.sortIconActive : styles.sortIcon,
+        ].join(" ")}
+      />
+    </span>
+  );
+
   // ── Table columns ─────────────────────────────────────────────────────────
   const columns: TableColumn<PurchaseOrder>[] = [
     { key: "code", label: "Mã phiếu", width: "150px" },
     { key: "supplierName", label: "Nhà cung cấp" },
     {
-      key: "details",
-      label: "SL Nhập",
+      key: "totalQuantity",
+      label: <SortHeader field="totalQuantity" label="SL Nhập" />,
       width: "90px",
       align: "center",
-      render: (val) => {
-        const details = val as PurchaseOrder["details"];
-        const total = details.reduce((s, d) => s + d.quantity, 0);
-        return <span style={{ fontWeight: 600 }}>{total}</span>;
-      },
+      render: (val) => <span style={{ fontWeight: 600 }}>{val as number}</span>,
     },
     {
       key: "totalAmount",
-      label: "Tổng tiền",
+      label: <SortHeader field="totalAmount" label="Tổng tiền" />,
       width: "140px",
       align: "right",
       render: (val) => (
@@ -765,6 +801,7 @@ export function WarehouseReceiptPage() {
         </strong>
       ),
     },
+
     {
       key: "paymentStatus",
       label: "Thanh toán",
@@ -791,10 +828,11 @@ export function WarehouseReceiptPage() {
     },
     {
       key: "receivedDate",
-      label: "Ngày nhập",
+      label: <SortHeader field="receivedDate" label="Ngày nhập" />,
       width: "130px",
       render: (val) => (val ? formatDateTime(val as string) : "—"),
     },
+
     {
       key: "id",
       label: "Hành động",

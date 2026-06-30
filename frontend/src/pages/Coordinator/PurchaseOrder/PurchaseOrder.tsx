@@ -192,6 +192,15 @@ const EMPTY_LINE: LineItem = {
 export function PurchaseOrderPage() {
   const { showToast } = useToast();
 
+  // ── Tham chiếu đến scroll container (.content trong DashboardLayout) ───────────
+  // Scroll thực tế nằm trên div .content (overflow-y: auto), không phải window.
+  // const scrollContainerRef = useRef<HTMLElement | null>(null);
+  // useEffect(() => {
+  //   // Truyền lên DOM để tìm phần tử cha gần nhất có overflow-y: auto
+  //   const el = document.querySelector<HTMLElement>("main[class*='content']");
+  //   scrollContainerRef.current = el;
+  // }, []);
+
   // ── Dữ liệu master ────────────────────────────────────────────────────────
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -203,6 +212,13 @@ export function PurchaseOrderPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // ── Sắp xếp ───────────────────────────────────────────────────────────────
+  type SortField = "totalQuantity" | "totalAmount" | "orderDate";
+  type SortDirection = "asc" | "desc";
+  const [sortField, setSortField] = useState<SortField>("orderDate");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
 
   // ── Tìm kiếm ──────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
@@ -287,14 +303,24 @@ export function PurchaseOrderPage() {
     setCurrentPage(1);
   }, [debouncedQuery]);
 
+  // Reset về trang 1 khi sort thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortField, sortDirection]);
+
+
   // ── Fetch danh sách đơn đặt hàng ─────────────────────────────────────────
   useEffect(() => {
     const fetchOrders = async () => {
+      // Lưu lại vị trí scroll trước khi bắt đầu fetch (trước setLoading(true) gây layout shift)
+      // const savedScrollTop = scrollContainerRef.current?.scrollTop ?? 0;
       try {
         setLoading(true);
         const data = await getPurchaseOrdersPage(
           currentPage,
           debouncedQuery || undefined,
+          sortField,
+          sortDirection,
         );
         setOrders(data.items);
         setTotalElements(data.totalElements);
@@ -306,12 +332,31 @@ export function PurchaseOrderPage() {
         setTotalElements(0);
       } finally {
         setLoading(false);
+        // Khôi phục vị trí scroll sau khi React hoàn tất re-render DOM
+        // requestAnimationFrame(() => {
+        //   if (scrollContainerRef.current) {
+        //     scrollContainerRef.current.scrollTop = savedScrollTop;
+        //   }
+        // });
       }
     };
     fetchOrders();
-  }, [currentPage, refreshTrigger, debouncedQuery, showToast]);
+  }, [currentPage, refreshTrigger, debouncedQuery, sortField, sortDirection, showToast]);
+
+
 
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
+
+  // ── Sort handler ──────────────────────────────────────────────────────────
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
 
   // ── Helpers cho supplier dropdown ─────────────────────────────────────────
   // Luôn dùng s.id (đã là chuỗi số nguyên hợp lệ sau khi mapper chạy String(s.id))
@@ -775,24 +820,48 @@ export function PurchaseOrderPage() {
     </div>
   );
 
+  // ─── Sort header helper ────────────────────────────────────────────────────
+  const SortHeader = ({
+    field,
+    label,
+  }: {
+    field: SortField;
+    label: string;
+  }) => (
+    <span
+      className={styles.sortableHeader}
+      onClick={() => handleSort(field)}
+    >
+      {label}
+      <i
+        className={[
+          "fi",
+          sortField === field
+            ? sortDirection === "desc"
+              ? "fi-rr-angle-small-down"
+              : "fi-rr-angle-small-up"
+            : "fi-rr-sort-alt",
+          sortField === field ? styles.sortIconActive : styles.sortIcon,
+        ].join(" ")}
+      />
+    </span>
+  );
+
   // ─── Table columns ─────────────────────────────────────────────────────────
+
   const columns: TableColumn<PurchaseOrder>[] = [
     { key: "code", label: "Mã đơn", width: "140px" },
     { key: "supplierName", label: "Nhà cung cấp" },
     {
-      key: "details",
-      label: "SL Đặt",
+      key: "totalQuantity",
+      label: <SortHeader field="totalQuantity" label="SL Đặt" />,
       width: "90px",
       align: "center",
-      render: (val) => {
-        const details = val as PurchaseOrder["details"];
-        const total = details.reduce((s, d) => s + d.quantity, 0);
-        return <span style={{ fontWeight: 600 }}>{total}</span>;
-      },
+      render: (val) => <span style={{ fontWeight: 600 }}>{val as number}</span>,
     },
     {
       key: "totalAmount",
-      label: "Tổng tiền",
+      label: <SortHeader field="totalAmount" label="Tổng tiền" />,
       width: "140px",
       align: "right",
       render: (val) => (
@@ -801,6 +870,7 @@ export function PurchaseOrderPage() {
         </strong>
       ),
     },
+
     {
       key: "status",
       label: "Trạng thái",
@@ -814,10 +884,11 @@ export function PurchaseOrderPage() {
     },
     {
       key: "orderDate",
-      label: "Ngày đặt",
+      label: <SortHeader field="orderDate" label="Ngày đặt" />,
       width: "110px",
       render: (val) => formatDateTime(val as string),
     },
+
     {
       key: "id",
       label: "Hành động",
