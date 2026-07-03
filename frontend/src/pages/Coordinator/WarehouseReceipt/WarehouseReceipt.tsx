@@ -19,7 +19,6 @@ import { formatCurrency, formatDateTime } from "../../../utils/formatters";
 import type { TableColumn } from "../../../types/common.types";
 import styles from "./WarehouseReceipt.module.css";
 
-// ─── Hằng số ──────────────────────────────────────────────────────────────────
 
 const PAYMENT_STATUS_LABEL: Record<string, string> = {
   UNPAID: "Chưa thanh toán",
@@ -36,10 +35,7 @@ const PAYMENT_STATUS_COLOR: Record<
   UNPAID: { bg: "#fee2e2", text: "#991b1b" },
 };
 
-/**
- * Format tên hiển thị của variant theo cấu trúc:
- * "[Tên SP] [option1] / [option2] / [option3]"
- */
+// Định dạng tên biến thể hiển thị
 function formatVariantName(
   productName: string,
   option1: string | null,
@@ -52,7 +48,7 @@ function formatVariantName(
   return opts ? `${productName} ${opts}` : productName;
 }
 
-/** Trả về thời điểm hiện tại theo định dạng ISO 8601 không có múi giờ */
+// Định dạng thời gian hiện tại ISO 8601 không có múi giờ
 function nowLocalIsoString(): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -62,7 +58,6 @@ function nowLocalIsoString(): string {
   );
 }
 
-// ─── Payment Modal ─────────────────────────────────────────────────────────────
 
 interface PaymentFormState {
   paymentMethodId: string;
@@ -87,22 +82,18 @@ function PaymentModal({
 }) {
   const { showToast } = useToast();
 
-  // ── Dữ liệu phương thức thanh toán ───────────────────────────────────────
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
 
-  // ── Lịch sử thanh toán ────────────────────────────────────────────────────
   const [history, setHistory] = useState<PaymentRecord[]>([]);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyPageSize, setHistoryPageSize] = useState(10);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // ── Tổng đã trả và còn lại (cập nhật sau mỗi lần thanh toán) ─────────────
   const [totalPaid, setTotalPaid] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
 
-  // ── Form state ────────────────────────────────────────────────────────────
   const [form, setForm] = useState<PaymentFormState>({
     paymentMethodId: "",
     paymentDate: nowLocalIsoString(),
@@ -118,7 +109,6 @@ function PaymentModal({
   const effectiveTotalPaid =
     totalPaid !== null ? totalPaid : 0;
 
-  // ── Fetch phương thức thanh toán ──────────────────────────────────────────
   useEffect(() => {
     const fetchMethods = async () => {
       try {
@@ -135,7 +125,6 @@ function PaymentModal({
     fetchMethods();
   }, [showToast]);
 
-  // ── Fetch lịch sử thanh toán ──────────────────────────────────────────────
   const fetchHistory = useCallback(
     async (page: number) => {
       try {
@@ -167,10 +156,19 @@ function PaymentModal({
   );
 
   useEffect(() => {
-    fetchHistory(historyPage);
+    let active = true;
+    const load = async () => {
+      await Promise.resolve();
+      if (active) {
+        fetchHistory(historyPage);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [fetchHistory, historyPage]);
 
-  // ── Validate form ─────────────────────────────────────────────────────────
   function validate(): boolean {
     const newErrors: PaymentFormErrors = {};
 
@@ -191,7 +189,6 @@ function PaymentModal({
     return Object.keys(newErrors).length === 0;
   }
 
-  // ── Submit thanh toán ─────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
@@ -243,7 +240,6 @@ function PaymentModal({
 
   const isPaid = effectiveRemaining === 0;
 
-  // ── Cột lịch sử giao dịch ────────────────────────────────────────────────
   const historyColumns: TableColumn<PaymentRecord>[] = [
     {
       key: "paymentDate",
@@ -287,7 +283,6 @@ function PaymentModal({
 
   return (
     <div className={styles.detail}>
-      {/* Header */}
       <div className={styles.detailHeader}>
         <div>
           <span className={styles.receiptCode}>{receipt.code}</span>
@@ -311,7 +306,6 @@ function PaymentModal({
         </span>
       </div>
 
-      {/* Tóm tắt tài chính */}
       <div className={styles.amounts}>
         <div className={styles.amountRow}>
           <span>Tổng tiền đơn hàng</span>
@@ -331,13 +325,11 @@ function PaymentModal({
         </div>
       </div>
 
-      {/* Form thanh toán (ẩn khi đã PAID) */}
       {!isPaid && (
         <form onSubmit={handleSubmit} noValidate>
           <div className={styles.paySection}>
             <div className={styles.payLabel}>Thực hiện thanh toán</div>
 
-            {/* Phương thức thanh toán */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <label
                 htmlFor="pm-method"
@@ -403,7 +395,6 @@ function PaymentModal({
               )}
             </div>
 
-            {/* Số tiền và ngày thanh toán */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
               <Input
                 id="pm-amount"
@@ -432,7 +423,6 @@ function PaymentModal({
               />
             </div>
 
-            {/* Ghi chú */}
             <Input
               id="pm-note"
               label="Ghi chú"
@@ -444,7 +434,6 @@ function PaymentModal({
               }
             />
 
-            {/* Nút xác nhận */}
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <Button
                 type="submit"
@@ -460,7 +449,6 @@ function PaymentModal({
         </form>
       )}
 
-      {/* Lịch sử giao dịch */}
       <div>
         <div
           style={{
@@ -512,7 +500,6 @@ function PaymentModal({
         )}
       </div>
 
-      {/* Footer */}
       <div className={styles.detailFooter}>
         <Button variant="secondary" onClick={onClose}>
           Đóng
@@ -522,7 +509,6 @@ function PaymentModal({
   );
 }
 
-// ─── Receipt Detail Modal (read-only + nút Thanh toán) ────────────────────────
 
 function ReceiptDetailView({
   receipt,
@@ -662,38 +648,30 @@ function ReceiptDetailView({
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export function WarehouseReceiptPage() {
   const { showToast } = useToast();
 
-  // ── Dữ liệu + phân trang ─────────────────────────────────────────────────
   const [receipts, setReceipts] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  // ── Tìm kiếm ─────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // ── Modal state ───────────────────────────────────────────────────────────
   const [detailReceipt, setDetailReceipt] = useState<PurchaseOrder | null>(null);
   const [paymentReceipt, setPaymentReceipt] = useState<PurchaseOrder | null>(null);
 
-  // ── Debounce tìm kiếm ─────────────────────────────────────────────────────
   useEffect(() => {
-    const handler = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setCurrentPage(1);
+    }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Reset về trang 1 khi query thay đổi
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedQuery]);
-
-  // ── Fetch danh sách phiếu nhập kho ───────────────────────────────────────
   const fetchReceipts = useCallback(async () => {
     try {
       setLoading(true);
@@ -715,10 +693,19 @@ export function WarehouseReceiptPage() {
   }, [currentPage, debouncedQuery, showToast]);
 
   useEffect(() => {
-    fetchReceipts();
+    let active = true;
+    const load = async () => {
+      await Promise.resolve();
+      if (active) {
+        fetchReceipts();
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [fetchReceipts]);
 
-  // ── Callback khi thanh toán thành công ────────────────────────────────────
   const handlePaymentSuccess = useCallback(
     (updatedReceipt: PurchaseOrder) => {
       // Cập nhật paymentStatus trong danh sách ngay lập tức
@@ -739,7 +726,6 @@ export function WarehouseReceiptPage() {
     [],
   );
 
-  // ── Table columns ─────────────────────────────────────────────────────────
   const columns: TableColumn<PurchaseOrder>[] = [
     { key: "code", label: "Mã phiếu", width: "150px" },
     { key: "supplierName", label: "Nhà cung cấp" },
@@ -823,7 +809,6 @@ export function WarehouseReceiptPage() {
           </div>
         </div>
 
-        {/* Search */}
         <div style={{ maxWidth: 340 }}>
           <Input
             id="wr-search"
@@ -854,7 +839,6 @@ export function WarehouseReceiptPage() {
         )}
       </div>
 
-      {/* Modal Chi tiết phiếu nhập kho */}
       <Modal
         isOpen={!!detailReceipt}
         onClose={() => setDetailReceipt(null)}
@@ -873,7 +857,6 @@ export function WarehouseReceiptPage() {
         )}
       </Modal>
 
-      {/* Modal Thanh toán */}
       <Modal
         isOpen={!!paymentReceipt}
         onClose={() => setPaymentReceipt(null)}

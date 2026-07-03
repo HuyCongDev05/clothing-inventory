@@ -69,20 +69,6 @@ export interface PaginatedProducts {
   totalPages: number;
 }
 
-function getAttributeValue(
-  attributes: Record<string, string> | undefined,
-  keywords: string[],
-): string {
-  if (!attributes) return "";
-  for (const key of Object.keys(attributes)) {
-    const lowerKey = key.toLowerCase();
-    if (keywords.some((kw) => lowerKey.includes(kw))) {
-      return attributes[key];
-    }
-  }
-  return "";
-}
-
 function mapBackendCategoryToFrontend(categoryName: string): {
   category: ProductCategory;
   categoryLabel: string;
@@ -93,46 +79,10 @@ function mapBackendCategoryToFrontend(categoryName: string): {
   };
 }
 
-export function mapBackendVariantToFrontend(v: VariantResponseDto, p?: ProductResponseDto): Variant {
-  const option1Value = p?.option1Name && v.attributes ? v.attributes[p.option1Name] : null;
-  const option2Value = p?.option2Name && v.attributes ? v.attributes[p.option2Name] : null;
-  const option3Value = p?.option3Name && v.attributes ? v.attributes[p.option3Name] : null;
-
-  let size = getAttributeValue(v.attributes, [
-    "size",
-    "kích thước",
-    "kich thuoc",
-  ]);
-  let color = getAttributeValue(v.attributes, [
-    "color",
-    "màu sắc",
-    "mau sac",
-    "màu",
-    "mau",
-  ]);
-  let material = getAttributeValue(v.attributes, [
-    "material",
-    "chất liệu",
-    "chat lieu",
-  ]);
-
-  // Map option values to corresponding size/color/material using option names
-  if (p) {
-    const checkOpt = (name: string | undefined, val: string | null | undefined) => {
-      if (!name || !val) return;
-      const lower = name.toLowerCase();
-      if (lower.includes("kích thước") || lower.includes("kich thuoc") || lower.includes("size")) {
-        size = val;
-      } else if (lower.includes("màu") || lower.includes("mau") || lower.includes("color")) {
-        color = val;
-      } else if (lower.includes("chất liệu") || lower.includes("chat lieu") || lower.includes("material")) {
-        material = val;
-      }
-    };
-    checkOpt(p.option1Name, option1Value);
-    checkOpt(p.option2Name, option2Value);
-    checkOpt(p.option3Name, option3Value);
-  }
+export function mapBackendVariantToFrontend(v: VariantResponseDto): Variant {
+  const option1Value = v.option1Value ?? null;
+  const option2Value = v.option2Value ?? null;
+  const option3Value = v.option3Value ?? null;
 
   return {
     id: String(v.id),
@@ -140,9 +90,9 @@ export function mapBackendVariantToFrontend(v: VariantResponseDto, p?: ProductRe
     importPrice: v.purchasePrice,
     salePrice: v.salePrice,
     stock: v.quantityOnHand || 0,
-    size: size || "",
-    color: color || "",
-    material: material || "",
+    size: option2Value || "",
+    color: option1Value || "",
+    material: option3Value || "",
     note: "",
     status: v.status,
     option1Value,
@@ -156,7 +106,7 @@ export function mapBackendProductToFrontend(p: ProductResponseDto): Product {
     p.categoryName,
   );
   const variants = p.variants
-    ? p.variants.map((v) => mapBackendVariantToFrontend(v, p))
+    ? p.variants.map((v) => mapBackendVariantToFrontend(v))
     : [];
 
   // Tổng tồn kho

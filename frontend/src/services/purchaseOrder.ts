@@ -5,9 +5,9 @@ import type {
   PurchaseOrderStatus,
 } from "../types/purchaseOrder.types";
 
-// ─── Backend DTO Interfaces ───────────────────────────────────────────────────
 
-/** Ánh xạ PurchaseOrderDetailResponseDto */
+
+// Chi tiết đơn đặt hàng từ backend
 export interface BackendPurchaseOrderDetailResponse {
   id: number;
   variantId: number;
@@ -21,7 +21,7 @@ export interface BackendPurchaseOrderDetailResponse {
   lineTotal: number;
 }
 
-/** Ánh xạ PurchaseOrderResponseDto */
+// Đơn đặt hàng từ backend
 export interface BackendPurchaseOrderResponse {
   id: number;
   code: string;
@@ -42,10 +42,7 @@ export interface BackendPurchaseOrderResponse {
   details: BackendPurchaseOrderDetailResponse[];
 }
 
-/**
- * Ánh xạ PageResponseDto<PurchaseOrderResponseDto>.
- * Backend trả trực tiếp object này bên trong trường `data` của ApiResponse.
- */
+// Phân trang đơn đặt hàng từ backend
 export interface PaginatedPurchaseOrdersResponse {
   items: BackendPurchaseOrderResponse[];
   page: number;
@@ -54,7 +51,7 @@ export interface PaginatedPurchaseOrdersResponse {
   totalPages: number;
 }
 
-/** Kiểu dữ liệu phân trang đã map sang frontend */
+// Phân trang đơn đặt hàng ở frontend
 export interface PaginatedPurchaseOrders {
   items: PurchaseOrder[];
   page: number;
@@ -63,7 +60,7 @@ export interface PaginatedPurchaseOrders {
   totalPages: number;
 }
 
-/** Request body để tạo đơn đặt hàng — ánh xạ PurchaseOrderRequestDto */
+// Dữ liệu tạo đơn đặt hàng
 export interface PurchaseOrderCreateRequestDto {
   code: string;
   supplierId: number;
@@ -76,12 +73,12 @@ export interface PurchaseOrderCreateRequestDto {
   }[];
 }
 
-/** Request body để cập nhật trạng thái — ánh xạ PurchaseOrderStatusUpdateRequestDto */
+// Dữ liệu cập nhật trạng thái đơn đặt hàng
 export interface PurchaseOrderStatusUpdateDto {
   status: PurchaseOrderStatus;
 }
 
-// ─── Mapper Function ──────────────────────────────────────────────────────────
+
 
 export function mapBackendOrderToFrontend(
   o: BackendPurchaseOrderResponse,
@@ -118,13 +115,9 @@ export function mapBackendOrderToFrontend(
   };
 }
 
-// ─── Service Functions ────────────────────────────────────────────────────────
 
-/**
- * Lấy danh sách đơn đặt hàng theo trang.
- * Backend: GET /purchase-orders?page=&keyword=
- * Response: ApiResponse<PageResponseDto<PurchaseOrderResponseDto>>
- */
+
+// Lấy danh sách đơn đặt hàng phân trang
 export async function getPurchaseOrdersPage(
   page: number,
   keyword?: string,
@@ -149,11 +142,7 @@ export async function getPurchaseOrdersPage(
   };
 }
 
-/**
- * Lấy danh sách phiếu nhập kho (đơn có status = RECEIVED) theo trang.
- * Backend: GET /purchase-orders/received?page=&keyword=&sortBy=&sortDir=
- * Response: ApiResponse<PageResponseDto<PurchaseOrderResponseDto>>
- */
+// Lấy danh sách phiếu nhập kho phân trang
 export async function getReceivedPurchaseOrdersPage(
   page: number,
   keyword?: string,
@@ -179,11 +168,7 @@ export async function getReceivedPurchaseOrdersPage(
 }
 
 
-/**
- * Lấy chi tiết một đơn đặt hàng theo id.
- * Backend: GET /purchase-orders/{id}
- * Response: ApiResponse<PurchaseOrderResponseDto>
- */
+// Lấy chi tiết đơn đặt hàng theo ID
 export async function getPurchaseOrderById(
   id: string,
 ): Promise<PurchaseOrder> {
@@ -193,11 +178,7 @@ export async function getPurchaseOrderById(
   return mapBackendOrderToFrontend(response.data);
 }
 
-/**
- * Sửa đơn đặt hàng (chỉ được phép khi trạng thái là DRAFT).
- * Backend: PUT /purchase-orders/{id}
- * Response: ApiResponse<PurchaseOrderResponseDto>
- */
+// Cập nhật đơn đặt hàng (chỉ cho phép khi ở trạng thái nháp)
 export async function updatePurchaseOrder(
   id: string,
   payload: PurchaseOrderCreateRequestDto,
@@ -226,11 +207,7 @@ export async function createPurchaseOrder(
   return mapBackendOrderToFrontend(response.data);
 }
 
-/**
- * Cập nhật trạng thái đơn đặt hàng.
- * Backend: PATCH /purchase-orders/{id}/status
- * Response: ApiResponse<PurchaseOrderResponseDto>
- */
+// Cập nhật trạng thái đơn đặt hàng
 export async function updatePurchaseOrderStatus(
   id: string,
   status: PurchaseOrderStatus,

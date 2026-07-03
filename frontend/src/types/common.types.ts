@@ -1,7 +1,4 @@
-/**
- * Ánh xạ FormatMessageResponseDto<T> (backend) — GlobalExceptionHandler
- * tự động bọc TẤT CẢ response vào cấu trúc này qua ResponseBodyAdvice.
- */
+// Định dạng phản hồi API chuẩn từ backend
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;

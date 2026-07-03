@@ -1,9 +1,9 @@
 import { apiFetch } from "./api";
 import type { ApiResponse } from "../types/common.types";
 
-// ─── Backend DTO Interfaces ───────────────────────────────────────────────────
 
-/** Ánh xạ PaymentMethodResponseDto */
+
+// Phương thức thanh toán từ backend
 export interface BackendPaymentMethodResponse {
   id: number;
   code: string;
@@ -13,7 +13,7 @@ export interface BackendPaymentMethodResponse {
   updatedAt: string;
 }
 
-/** Ánh xạ PaymentResponseDto */
+// Giao dịch thanh toán từ backend
 export interface BackendPaymentResponse {
   id: number;
   purchaseOrderId: number;
@@ -32,10 +32,7 @@ export interface BackendPaymentResponse {
   updatedAt: string;
 }
 
-/**
- * Ánh xạ PageResponseDto<PaymentResponseDto>.
- * Backend trả trực tiếp object này bên trong trường `data` của ApiResponse.
- */
+// Phân trang danh sách thanh toán từ backend
 export interface PaginatedPaymentsResponse {
   items: BackendPaymentResponse[];
   page: number;
@@ -44,7 +41,7 @@ export interface PaginatedPaymentsResponse {
   totalPages: number;
 }
 
-/** Frontend-friendly interface cho một giao dịch thanh toán */
+// Giao dịch thanh toán ở frontend
 export interface PaymentRecord {
   id: number;
   purchaseOrderId: number;
@@ -61,7 +58,7 @@ export interface PaymentRecord {
   createdAt: string;
 }
 
-/** Frontend-friendly interface cho một phương thức thanh toán */
+// Phương thức thanh toán ở frontend
 export interface PaymentMethod {
   id: number;
   code: string;
@@ -69,7 +66,7 @@ export interface PaymentMethod {
   status: string;
 }
 
-/** Phân trang danh sách giao dịch thanh toán */
+// Phân trang danh sách thanh toán ở frontend
 export interface PaginatedPayments {
   items: PaymentRecord[];
   page: number;
@@ -78,7 +75,7 @@ export interface PaginatedPayments {
   totalPages: number;
 }
 
-/** Request body để tạo thanh toán — ánh xạ PaymentRequestDto */
+// Dữ liệu tạo giao dịch thanh toán
 export interface PaymentCreateRequestDto {
   purchaseOrderId: number;
   paymentMethodId: number;
@@ -87,7 +84,7 @@ export interface PaymentCreateRequestDto {
   note?: string;
 }
 
-// ─── Mapper Functions ─────────────────────────────────────────────────────────
+
 
 function mapBackendPaymentToFrontend(p: BackendPaymentResponse): PaymentRecord {
   return {
@@ -118,13 +115,9 @@ function mapBackendPaymentMethodToFrontend(
   };
 }
 
-// ─── Service Functions ────────────────────────────────────────────────────────
 
-/**
- * Lấy danh sách phương thức thanh toán.
- * Backend: GET /payment-methods
- * Response: ApiResponse<List<PaymentMethodResponseDto>>
- */
+
+// Lấy danh sách phương thức thanh toán
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   const response = await apiFetch<ApiResponse<BackendPaymentMethodResponse[]>>(
     "/payment-methods",
@@ -132,11 +125,7 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   return (response.data || []).map(mapBackendPaymentMethodToFrontend);
 }
 
-/**
- * Tạo một giao dịch thanh toán mới.
- * Backend: POST /payments
- * Response: ApiResponse<PaymentResponseDto>
- */
+// Tạo giao dịch thanh toán mới
 export async function createPayment(
   payload: PaymentCreateRequestDto,
 ): Promise<PaymentRecord> {
@@ -150,11 +139,7 @@ export async function createPayment(
   return mapBackendPaymentToFrontend(response.data);
 }
 
-/**
- * Lấy lịch sử thanh toán theo mã đơn đặt hàng.
- * Backend: GET /payments/purchase-order/{purchaseOrderId}?page=
- * Response: ApiResponse<PageResponseDto<PaymentResponseDto>>
- */
+// Lấy lịch sử thanh toán theo ID đơn hàng
 export async function getPaymentHistoryByPurchaseOrderId(
   purchaseOrderId: number,
   page: number = 1,
