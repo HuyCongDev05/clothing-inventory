@@ -16,7 +16,7 @@ import {
   type PaymentMethod,
   type PaymentRecord,
 } from "../../../services/payment";
-import { formatCurrency, formatDateTime } from "../../../utils/formatters";
+import { formatCurrency, formatDateTime, formatNumber } from "../../../utils/formatters";
 import type { TableColumn } from "../../../types/common.types";
 import styles from "./WarehouseReceipt.module.css";
 
@@ -101,6 +101,8 @@ function PaymentModal({
     amount: "",
     note: "",
   });
+  // Chuỗi hiển thị đã được format theo định dạng tiền VN (1.000.000)
+  const [amountDisplay, setAmountDisplay] = useState("");
   const [errors, setErrors] = useState<PaymentFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -217,6 +219,7 @@ function PaymentModal({
         note: "",
         paymentDate: nowLocalIsoString(),
       }));
+      setAmountDisplay("");
       setErrors({});
 
       // Refresh lịch sử giao dịch về trang 1
@@ -400,15 +403,19 @@ function PaymentModal({
               <Input
                 id="pm-amount"
                 label="Số tiền thanh toán"
-                type="number"
-                step="any"
+                type="text"
+                inputMode="numeric"
                 placeholder={`Tối đa ${formatCurrency(effectiveRemaining)}`}
-                value={form.amount}
+                value={amountDisplay}
                 onChange={(e) => {
-                  setForm((prev) => ({ ...prev, amount: e.target.value }));
+                  // Loại bỏ tất cả ký tự không phải chữ số
+                  const raw = e.target.value.replace(/\D/g, "");
+                  // Cập nhật giá trị thuần (dùng để validate / submit)
+                  setForm((prev) => ({ ...prev, amount: raw }));
+                  // Cập nhật chuỗi hiển thị đã format (VD: 1.000.000, 500.000, ...)
+                  setAmountDisplay(raw ? formatNumber(Number(raw)) : "");
                   setErrors((prev) => ({ ...prev, amount: undefined }));
                 }}
-                onWheel={(e) => e.currentTarget.blur()}
                 error={errors.amount}
                 required
               />
