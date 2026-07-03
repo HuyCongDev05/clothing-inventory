@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PurchaseOrder } from "../../../types/purchaseOrder.types";
 import { Input } from "../../../components/Input/Input";
+import { SearchBox } from "../../../components/SearchBox/SearchBox";
 import { Button } from "../../../components/Button/Button";
 import { Card, CardHeader, CardBody } from "../../../components/Card/Card";
 import { Modal } from "../../../components/Modal/Modal";
@@ -809,17 +810,24 @@ export function WarehouseReceiptPage() {
           </div>
         </div>
 
-        <div style={{ maxWidth: 340 }}>
-          <Input
-            id="wr-search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo mã phiếu, nhà cung cấp..."
-          />
-        </div>
-
         <Card>
-          <CardHeader title="Danh sách phiếu nhập kho" />
+          <CardHeader
+            title="Danh sách phiếu nhập kho"
+            actions={
+              <SearchBox
+                placeholder="Tìm mã phiếu, NCC..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onClear={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
+              />
+            }
+          />
           <CardBody className={styles.tableBody}>
             <Table
               columns={columns}
@@ -828,15 +836,16 @@ export function WarehouseReceiptPage() {
               loading={loading}
               emptyText="Chưa có phiếu nhập nào"
             />
+            {totalElements > 0 && (
+              <div className={styles.paginationWrap}>
+                <Pagination
+                  pagination={{ page: currentPage, pageSize, total: totalElements }}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </CardBody>
         </Card>
-
-        {totalElements > 0 && (
-          <Pagination
-            pagination={{ page: currentPage, pageSize, total: totalElements }}
-            onPageChange={setCurrentPage}
-          />
-        )}
       </div>
 
       <Modal

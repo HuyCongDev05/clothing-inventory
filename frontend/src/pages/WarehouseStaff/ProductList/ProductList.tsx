@@ -1574,30 +1574,31 @@ export function ProductList() {
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", maxWidth: "240px" }}>
+          <Select
+            id="categoryFilter"
+            options={categoryOptions}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          />
+        </div>
+
         <Card>
           <CardHeader
             title="Tất cả sản phẩm"
             actions={
-              <div className={styles.filters}>
-                <Select
-                  id="categoryFilter"
-                  options={categoryOptions}
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                />
-                <SearchBox
-                  placeholder="Tìm SKU, tên sản phẩm..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  onClear={() => {
-                    setSearchQuery("");
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
+              <SearchBox
+                placeholder="Tìm SKU, tên sản phẩm..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onClear={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
+              />
             }
           />
           <CardBody className={styles.tableBody}>

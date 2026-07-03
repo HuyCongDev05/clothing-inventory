@@ -6,8 +6,9 @@ import { Modal } from "../../../components/Modal/Modal";
 import { Button } from "../../../components/Button/Button";
 import { Card, CardHeader, CardBody } from "../../../components/Card/Card";
 import { Input } from "../../../components/Input/Input";
+import { SearchBox } from "../../../components/SearchBox/SearchBox";
 import type { TableColumn } from "../../../types/common.types";
-import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { formatCurrency, formatDateTime } from "../../../utils/formatters";
 import { useWarehouseContext } from "../../../hooks/useWarehouseContext";
 import styles from "./Payment.module.css";
 
@@ -34,11 +35,18 @@ export function Payment() {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("transfer");
   const [payAmount, setPayAmount] = useState<string>("");
 
-  // Chỉ hiển thị phiếu đã xác nhận (isDraft === false)
-  const confirmedReceipts = useMemo(
-    () => warehouseReceipts.filter((r) => !r.isDraft),
-    [warehouseReceipts],
-  );
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredReceipts = useMemo(() => {
+    const active = warehouseReceipts.filter((r) => !r.isDraft);
+    if (!searchQuery.trim()) return active;
+    const lower = searchQuery.toLowerCase().trim();
+    return active.filter(
+      (r) =>
+        r.code.toLowerCase().includes(lower) ||
+        r.supplierName.toLowerCase().includes(lower)
+    );
+  }, [warehouseReceipts, searchQuery]);
 
   const openDetail = (row: WarehouseReceipt) => {
     setSelected(row);
@@ -113,7 +121,7 @@ export function Payment() {
       key: "createdAt",
       label: "Ngày tạo",
       width: "110px",
-      render: (val) => formatDate(val as string),
+      render: (val) => formatDateTime(val as string),
     },
     {
       key: "id",
@@ -139,14 +147,24 @@ export function Payment() {
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>Thanh toán nhà cung cấp</h2>
-            <p className={styles.subtitle}>{confirmedReceipts.length} phiếu nhập</p>
+            <p className={styles.subtitle}>{filteredReceipts.length} phiếu nhập</p>
           </div>
         </div>
 
         <Card>
-          <CardHeader title="Danh sách phiếu nhập" />
+          <CardHeader
+            title="Danh sách phiếu nhập"
+            actions={
+              <SearchBox
+                placeholder="Tìm mã phiếu, NCC..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery("")}
+              />
+            }
+          />
           <CardBody className={styles.tableBody}>
-            <Table columns={columns} data={confirmedReceipts} rowKey="id" emptyText="Chưa có phiếu nhập nào được xác nhận" />
+            <Table columns={columns} data={filteredReceipts} rowKey="id" emptyText="Chưa có phiếu nhập nào được xác nhận" />
           </CardBody>
         </Card>
       </div>

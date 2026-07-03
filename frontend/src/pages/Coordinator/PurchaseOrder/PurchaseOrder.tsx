@@ -4,6 +4,7 @@ import { Card, CardHeader, CardBody } from "../../../components/Card/Card";
 import { Modal } from "../../../components/Modal/Modal";
 import { Select } from "../../../components/Select/Select";
 import { Input } from "../../../components/Input/Input";
+import { SearchBox } from "../../../components/SearchBox/SearchBox";
 import { ConfirmDialog } from "../../../components/ConfirmDialog/ConfirmDialog";
 import { Table } from "../../../components/Table/Table";
 import { Pagination } from "../../../components/Pagination/Pagination";
@@ -821,17 +822,24 @@ export function PurchaseOrderPage() {
           </Button>
         </div>
 
-        <div style={{ maxWidth: 340 }}>
-          <Input
-            id="po-search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo mã đơn, nhà cung cấp..."
-          />
-        </div>
-
         <Card>
-          <CardHeader title="Danh sách đơn đặt hàng" />
+          <CardHeader
+            title="Danh sách đơn đặt hàng"
+            actions={
+              <SearchBox
+                placeholder="Tìm mã đơn, NCC..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onClear={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
+              />
+            }
+          />
           <CardBody className={styles.tableCardBody}>
             <Table
               columns={columns}
@@ -840,15 +848,16 @@ export function PurchaseOrderPage() {
               loading={loading}
               emptyText="Chưa có đơn đặt hàng nào"
             />
+            {totalElements > 0 && (
+              <div className={styles.paginationWrap}>
+                <Pagination
+                  pagination={{ page: currentPage, pageSize, total: totalElements }}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </CardBody>
         </Card>
-
-        {totalElements > 0 && (
-          <Pagination
-            pagination={{ page: currentPage, pageSize, total: totalElements }}
-            onPageChange={setCurrentPage}
-          />
-        )}
       </div>
 
       <Modal

@@ -579,7 +579,7 @@ export function SupplierManagement() {
             title="Danh sách nhà cung cấp"
             actions={
               <SearchBox
-                placeholder="Tìm theo tên, mã, email..."
+                placeholder="Tìm tên, mã, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onClear={() => setSearchQuery("")}

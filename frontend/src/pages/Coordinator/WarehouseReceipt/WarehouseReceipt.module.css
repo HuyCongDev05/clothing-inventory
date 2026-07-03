@@ -665,3 +665,7 @@
   color: var(--color-primary);
 }
 
+.paginationWrap {
+  padding: 0 var(--space-4);
+}
+
