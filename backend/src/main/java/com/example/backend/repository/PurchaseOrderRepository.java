@@ -1,11 +1,9 @@
 package com.example.backend.repository;
 
 import com.example.backend.model.PurchaseOrder;
-import com.example.backend.model.enums.PurchaseOrderStatus;
 import jakarta.persistence.LockModeType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,28 +12,10 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long> {
-    Optional<PurchaseOrder> findByCode(String code);
+public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long>, JpaSpecificationExecutor<PurchaseOrder> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT po FROM PurchaseOrder po WHERE po.id = :id")
     Optional<PurchaseOrder> findByIdForUpdate(@Param("id") Long id);
 
-    boolean existsByCode(String code);
-
-    boolean existsBySupplierId(Long supplierId);
-
-    @Query("SELECT po FROM PurchaseOrder po JOIN po.supplier s WHERE " +
-            "LOWER(po.code) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<PurchaseOrder> search(@Param("keyword") String keyword, Pageable pageable);
-
-    Page<PurchaseOrder> findAllByStatus(PurchaseOrderStatus status, Pageable pageable);
-
-    @Query("SELECT po FROM PurchaseOrder po JOIN po.supplier s WHERE po.status = :status AND (" +
-            "LOWER(po.code) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<PurchaseOrder> searchByStatus(@Param("keyword") String keyword,
-                                       @Param("status") PurchaseOrderStatus status,
-                                       Pageable pageable);
 }

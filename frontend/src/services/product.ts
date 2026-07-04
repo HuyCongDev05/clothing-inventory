@@ -153,10 +153,16 @@ export function mapBackendProductToFrontend(p: ProductResponseDto): Product {
 export async function getProductsPage(
   page: number,
   keyword?: string,
+  status?: string,
+  sortBy?: string,
+  sortDir?: "asc" | "desc",
 ): Promise<PaginatedProducts> {
-  const url = keyword
-    ? `/products?page=${page}&keyword=${encodeURIComponent(keyword)}`
-    : `/products?page=${page}`;
+  const params = new URLSearchParams({ page: String(page) });
+  if (keyword) params.set("keyword", keyword);
+  if (status) params.set("status", status.toUpperCase());
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDirection", sortDir);
+  const url = `/products?${params.toString()}`;
 
   const response = await apiFetch<ApiResponse<PaginatedProductsResponse>>(url);
   const data = response.data;

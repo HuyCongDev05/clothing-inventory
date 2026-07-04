@@ -13,4 +13,5 @@ export const ROUTES = {
   STOREKEEPER_SUPPLIERS: "/storekeeper/suppliers",
   STOREKEEPER_CONTACT: "/storekeeper/contact",
   PROFILE: "/profile",
+  ADMIN_USERS: "/admin/users",
 } as const;

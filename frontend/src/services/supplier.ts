@@ -56,15 +56,22 @@ export function mapBackendSupplierToFrontend(
 export async function getSuppliersPage(
   page: number,
   keyword?: string,
+  status?: string,
+  sortBy?: string,
+  sortDir?: "asc" | "desc",
 ): Promise<PaginatedSuppliers> {
-  const url = keyword
-    ? `/suppliers?page=${page}&keyword=${encodeURIComponent(keyword)}`
-    : `/suppliers?page=${page}`;
+  const params = new URLSearchParams({ page: String(page) });
+  if (keyword) params.set("keyword", keyword);
+  if (status) params.set("status", status.toUpperCase());
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDirection", sortDir);
+  const url = `/suppliers?${params.toString()}`;
+
   const response = await apiFetch<ApiResponse<PaginatedSuppliersResponse>>(url);
   const data = response.data;
   return {
     items: data.items.map(mapBackendSupplierToFrontend),
-    page: data.page, // already 1-based, directly map from backend response
+    page: data.page,
     pageSize: data.size,
     totalElements: data.totalElements,
     totalPages: data.totalPages,

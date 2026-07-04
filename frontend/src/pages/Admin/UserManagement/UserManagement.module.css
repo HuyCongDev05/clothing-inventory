@@ -1,0 +1,202 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: var(--font-sm);
+  color: var(--color-subtext);
+  margin-top: 4px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--color-subtext);
+  gap: var(--space-4);
+}
+
+.emptyState i {
+  font-size: 3rem;
+  color: var(--color-border);
+}
+
+.emptyState p {
+  font-size: var(--font-base);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.formRowSingle {
+  display: flex;
+  flex-direction: column;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.checkboxInput {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.required {
+  color: var(--color-danger);
+  margin-left: 2px;
+}
+
+.roleBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 500;
+}
+
+.roleBadge.admin {
+  background-color: #F5F3FF;
+  color: #7C3AED;
+}
+
+.roleBadge.coordinator {
+  background-color: var(--color-info-light);
+  color: var(--color-primary);
+}
+
+.roleBadge.warehouse-staff {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.roleBadge.store-keeper {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.badge {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge.active {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.badge.inactive {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.tableBody {
+  padding: 0;
+}
+
+.sortableHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color var(--transition);
+}
+
+.sortableHeader:hover {
+  color: var(--color-primary);
+}
+
+.sortIcon {
+  font-size: 0.72rem;
+  color: var(--color-subtext);
+  opacity: 0.45;
+  transition: opacity var(--transition), color var(--transition);
+}
+
+.sortIconActive {
+  font-size: 0.72rem;
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

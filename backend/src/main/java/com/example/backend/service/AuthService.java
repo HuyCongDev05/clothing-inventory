@@ -72,41 +72,29 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponseDto.info register(AuthRequestDto.Register register, HttpServletResponse response) {
+    public AuthResponseDto.Me register(AuthRequestDto.Register register) {
         if (userRepository.existsByEmail(register.getUsername()) || userRepository.existsByUsername(register.getUsername()))
             throw new InvalidException(ErrorCode.CONFLICT_ACCOUNT);
+        Set<Role> roles = register.getRoles().stream()
+                .map(roleName -> {
+                    if ("admin".equalsIgnoreCase(roleName)) {
+                        throw new InvalidException(ErrorCode.ROLE_NOT_FOUND);
+                    }
+                    return roleRepository.findByName(roleName)
+                            .orElseThrow(() -> new InvalidException(ErrorCode.ROLE_NOT_FOUND));
+                })
+                .collect(Collectors.toSet());
+
         User user = new User();
         user.setUsername(register.getUsername());
         user.setPassword(passwordEncoder.encode(register.getPassword()));
         user.setFullName(register.getFullName());
         user.setEmail(register.getEmail());
         user.setPhone(register.getPhone());
-
-        Set<Role> roles = register.getRoles().stream()
-                .map(roleName -> roleRepository.findByName(roleName)
-                        .orElseThrow(() -> new InvalidException(ErrorCode.ROLE_NOT_FOUND)))
-                .collect(Collectors.toSet());
         user.setRoles(roles);
         
         userRepository.save(user);
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                register.getUsername(),
-                register.getPassword()
-        );
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String accessToken = jwtUtil.generateAccessToken(user.getUuid(), authentication);
-        String refreshToken = jwtUtil.generateRefreshToken(user.getUuid(), authentication);
-        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(7 * 24 * 60 * 60)
-                .sameSite("None")
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        cacheService.saveRefreshToken(user.getUuid(), refreshToken);
-        return authMapper.toInfoResponse(user, accessToken);
+        return authMapper.toMe(user);
     }
 
     public AuthResponseDto.RefreshToken refreshAccessToken(String refreshToken) {
@@ -130,6 +118,4 @@ public class AuthService {
         accessToken.setAccessToken(jwtUtil.generateAccessToken(uuid, authentication));
         return accessToken;
     }
-
-
 }

@@ -1,8 +1,11 @@
 package com.example.backend.dto.response;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class AuthResponseDto {
     @Getter
     @Setter

@@ -4,12 +4,15 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class ProductCreateRequestDto {
+
     @NotBlank(message = "Product name cannot be blank")
     @Size(max = 255, message = "Product name cannot exceed 255 characters")
     private String name;

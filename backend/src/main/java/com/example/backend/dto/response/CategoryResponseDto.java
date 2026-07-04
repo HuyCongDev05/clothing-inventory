@@ -1,10 +1,12 @@
 package com.example.backend.dto.response;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 public class CategoryResponseDto {
     private Long id;
     private String code;

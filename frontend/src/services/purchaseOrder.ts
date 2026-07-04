@@ -121,13 +121,15 @@ export function mapBackendOrderToFrontend(
 export async function getPurchaseOrdersPage(
   page: number,
   keyword?: string,
+  status?: string,
   sortBy?: string,
   sortDir?: "asc" | "desc",
 ): Promise<PaginatedPurchaseOrders> {
   const params = new URLSearchParams({ page: String(page) });
   if (keyword) params.set("keyword", keyword);
+  if (status) params.set("status", status.toUpperCase());
   if (sortBy) params.set("sortBy", sortBy);
-  if (sortDir) params.set("sortDir", sortDir);
+  if (sortDir) params.set("sortDirection", sortDir);
   const url = `/purchase-orders?${params.toString()}`;
 
   const response = await apiFetch<ApiResponse<PaginatedPurchaseOrdersResponse>>(url);
@@ -152,7 +154,7 @@ export async function getReceivedPurchaseOrdersPage(
   const params = new URLSearchParams({ page: String(page) });
   if (keyword) params.set("keyword", keyword);
   if (sortBy)  params.set("sortBy", sortBy);
-  if (sortDir) params.set("sortDir", sortDir);
+  if (sortDir) params.set("sortDirection", sortDir);
   const url = `/purchase-orders/received?${params.toString()}`;
 
   const response = await apiFetch<ApiResponse<PaginatedPurchaseOrdersResponse>>(url);

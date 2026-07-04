@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +24,7 @@ public class PaymentMethodService {
     public List<PaymentMethodResponseDto> getAllPaymentMethods() {
         return paymentMethodRepository.findAll().stream()
                 .map(paymentMethodMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public PaymentMethodResponseDto getPaymentMethodById(Long id) {
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new InvalidException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
-        return paymentMethodMapper.toResponse(paymentMethod);
+                .toList();
     }
 
     @Transactional

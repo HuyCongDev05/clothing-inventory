@@ -24,16 +24,15 @@ public class Supplier {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "contact_person", length = 255)
+    @Column(name = "contact_person")
     private String contactPerson;
 
     @Column(length = 20)
     private String phone;
 
-    @Column(length = 255)
     private String email;
 
     @Column(columnDefinition = "TEXT")

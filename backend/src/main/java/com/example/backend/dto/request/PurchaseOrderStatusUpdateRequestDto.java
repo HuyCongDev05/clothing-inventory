@@ -2,9 +2,11 @@ package com.example.backend.dto.request;
 
 import com.example.backend.model.enums.PurchaseOrderStatus;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class PurchaseOrderStatusUpdateRequestDto {
 
     @NotNull(message = "Status cannot be null")

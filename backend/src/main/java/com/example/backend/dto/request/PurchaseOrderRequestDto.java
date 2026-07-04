@@ -1,21 +1,17 @@
 package com.example.backend.dto.request;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class PurchaseOrderRequestDto {
-
-    @NotBlank(message = "Purchase order code cannot be blank")
-    @Size(max = 50, message = "Purchase order code cannot exceed 50 characters")
-    private String code;
 
     @NotNull(message = "Supplier ID cannot be null")
     private Long supplierId;

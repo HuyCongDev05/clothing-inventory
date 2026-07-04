@@ -107,7 +107,7 @@ function SearchableProductDropdown({
         <span>
           {selectedProduct
             ? `${selectedProduct.sku} - ${selectedProduct.name}`
-            : "-- Chọn sản phẩm (variant) --"}
+            : "-- Chọn sản phẩm --"}
         </span>
         <i className={`fi fi-rr-angle-small-${isOpen ? "up" : "down"}`} />
       </div>
@@ -207,6 +207,7 @@ export function PurchaseOrderPage() {
 
   const [sortBy, setSortBy] = useState<"orderDate" | "totalAmount" | "totalQuantity">("orderDate");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -284,28 +285,27 @@ export function PurchaseOrderPage() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  /** Xử lý khi người dùng bấm vào header cột có thể sort */
+  // Xử lý khi người dùng bấm vào header cột có thể sort
   const handleSort = (field: "orderDate" | "totalAmount" | "totalQuantity") => {
+    console.log("[PurchaseOrder Sort] Clicked:", field, "Current state:", { sortBy, sortDir });
     if (sortBy === field) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortBy(field);
-      setSortDir("desc");
+      setSortDir("asc");
     }
     setCurrentPage(1);
   };
 
-  /** Render label header có thể sort kèm icon chỉ hướng */
+  // Render label header có thể sort kèm icon chỉ hướng
   const buildSortHeader = (
     label: string,
     field: "orderDate" | "totalAmount" | "totalQuantity",
   ) => {
     const isActive = sortBy === field;
-    const iconClass = isActive
-      ? sortDir === "asc"
-        ? "fi fi-rr-caret-up"
-        : "fi fi-rr-caret-down"
-      : "fi fi-rr-caret-down";
+    const isAsc = isActive && sortDir === "asc";
+    const iconClass = isAsc ? "fi fi-rr-caret-up" : "fi fi-rr-caret-down";
+
     return (
       <span
         className={styles.sortableHeader}
@@ -316,7 +316,7 @@ export function PurchaseOrderPage() {
       >
         {label}
         <i
-          className={`${iconClass} ${isActive ? styles.sortIconActive : styles.sortIcon}`}
+          className={`${iconClass} ${isAsc ? styles.sortIconActive : styles.sortIcon}`}
         />
       </span>
     );
@@ -329,6 +329,7 @@ export function PurchaseOrderPage() {
         const data = await getPurchaseOrdersPage(
           currentPage,
           debouncedQuery || undefined,
+          statusFilter || undefined,
           sortBy,
           sortDir,
         );
@@ -345,7 +346,7 @@ export function PurchaseOrderPage() {
       }
     };
     fetchOrders();
-  }, [currentPage, refreshTrigger, debouncedQuery, sortBy, sortDir, showToast]);
+  }, [currentPage, refreshTrigger, debouncedQuery, sortBy, sortDir, showToast, statusFilter]);
 
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
@@ -595,7 +596,7 @@ export function PurchaseOrderPage() {
         <table className={styles.itemsTable}>
           <thead>
             <tr>
-              <th>Sản phẩm (Variant)</th>
+              <th>Sản phẩm</th>
               <th style={{ width: 80 }}>SL</th>
               <th style={{ width: 140 }}>Đơn giá nhập</th>
               <th style={{ width: 130 }}>Thành tiền</th>
@@ -872,6 +873,23 @@ export function PurchaseOrderPage() {
           <Button icon="fi fi-rr-add" onClick={openCreate}>
             Tạo đơn đặt hàng
           </Button>
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", maxWidth: "240px" }}>
+          <Select
+            id="statusFilter"
+            options={[
+              { value: "", label: "Tất cả trạng thái" },
+              { value: "DRAFT", label: "Nháp" },
+              { value: "PENDING", label: "Chờ nhập hàng" },
+              { value: "RECEIVED", label: "Đã nhận hàng" },
+            ]}
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         <Card>

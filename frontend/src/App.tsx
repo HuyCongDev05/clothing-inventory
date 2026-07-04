@@ -9,6 +9,7 @@ import { SupplierManagement } from "./pages/StoreKeeper/SupplierManagement/Suppl
 import { SupplierContact } from "./pages/StoreKeeper/SupplierContact/SupplierContact";
 import { Login } from "./pages/Login/Login";
 import { Profile } from "./pages/Profile/Profile";
+import { UserManagement } from "./pages/Admin/UserManagement/UserManagement";
 import { ROUTES } from "./constants/routes";
 import { ToastProvider } from "./components/Toast/ToastProvider";
 import { WarehouseContextProvider } from "./context/WarehouseContext";
@@ -53,6 +54,10 @@ const router = createBrowserRouter([
       {
         path: ROUTES.PROFILE,
         element: <Profile />,
+      },
+      {
+        path: ROUTES.ADMIN_USERS,
+        element: <UserManagement />,
       },
       {
         path: "*",

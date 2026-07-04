@@ -18,6 +18,8 @@ public enum ErrorCode {
     PAYMENT_METHOD_NOT_FOUND(404, "Payment method not found"),
 
     CONFLICT_ACCOUNT(409, "Account already exists"),
+    CONFLICT_USER_EMAIL(409, "Email already in use by another account"),
+    CONFLICT_USER_PHONE(409, "Phone number already in use by another account"),
     CONFLICT_SUPPLIER_CODE(409, "Supplier code already exists"),
     CONFLICT_SUPPLIER_EMAIL(409, "Supplier email already exists"),
     CONFLICT_SUPPLIER_PHONE(409, "Supplier phone already exists"),
@@ -35,7 +37,6 @@ public enum ErrorCode {
     PURCHASE_ORDER_CANNOT_BE_MODIFIED(400, "Purchase order cannot be modified in its current status"),
     PAYMENT_AMOUNT_EXCEEDS_REMAINING(400, "Payment amount exceeds remaining amount"),
 
-    // Deletion & Update Errors
     CANNOT_DELETE_SUPPLIER_HAS_PURCHASE_ORDER(409, "Cannot delete supplier with existing purchase orders"),
     CANNOT_DELETE_PRODUCT_HAS_TRANSACTIONS(409, "Cannot delete product because its variants have existing transactions"),
     CANNOT_DELETE_VARIANT_HAS_TRANSACTIONS(409, "Cannot delete variant with existing transactions"),
