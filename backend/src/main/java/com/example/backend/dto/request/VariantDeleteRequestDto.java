@@ -1,11 +1,13 @@
 package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class VariantDeleteRequestDto {
     @NotEmpty(message = "Variant IDs cannot be empty")
     private List<Long> variantIds;

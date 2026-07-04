@@ -1,12 +1,14 @@
 package com.example.backend.dto.response;
 
 import com.example.backend.model.enums.Status;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class ProductResponseDto {
     private Long id;
     private String code;

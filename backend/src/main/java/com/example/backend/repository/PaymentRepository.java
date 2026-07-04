@@ -9,11 +9,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    List<Payment> findByPurchaseOrderId(Long purchaseOrderId);
 
     Page<Payment> findByPurchaseOrderIdOrderByPaymentDateDesc(Long purchaseOrderId, Pageable pageable);
 

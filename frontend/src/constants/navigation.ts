@@ -62,4 +62,15 @@ export const NAV_GROUPS: NavGroup[] = [
       },
     ],
   },
+  {
+    groupLabel: "QUẢN TRỊ VIÊN",
+    roles: ["admin"],
+    items: [
+      {
+        label: "Quản lý tài khoản",
+        path: ROUTES.ADMIN_USERS,
+        icon: "fi fi-rr-users-alt",
+      },
+    ],
+  },
 ];

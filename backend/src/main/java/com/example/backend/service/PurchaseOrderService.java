@@ -13,9 +13,11 @@ import com.example.backend.model.*;
 import com.example.backend.model.enums.PurchaseOrderPaymentStatus;
 import com.example.backend.model.enums.PurchaseOrderStatus;
 import com.example.backend.repository.*;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,26 +44,34 @@ public class PurchaseOrderService {
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final PurchaseOrderDetailMapper purchaseOrderDetailMapper;
 
-    public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, Pageable pageable) {
-        Page<PurchaseOrder> purchaseOrderPage;
-        if (StringUtils.hasText(keyword)) {
-            purchaseOrderPage = purchaseOrderRepository.search(keyword, pageable);
-        } else {
-            purchaseOrderPage = purchaseOrderRepository.findAll(pageable);
-        }
+    public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, PurchaseOrderStatus status, Pageable pageable) {
+        Specification<PurchaseOrder> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.notEqual(root.get("status"), PurchaseOrderStatus.CANCELLED));
+
+            if (StringUtils.hasText(keyword)) {
+                String keywordLower = "%" + keyword.toLowerCase() + "%";
+                Predicate codePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), keywordLower);
+                Predicate namePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("supplier").get("name")), keywordLower);
+                predicates.add(criteriaBuilder.or(codePredicate, namePredicate));
+            }
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<PurchaseOrder> purchaseOrderPage = purchaseOrderRepository.findAll(spec, pageable);
         Page<PurchaseOrderResponseDto> dtoPage = purchaseOrderPage.map(this::buildResponseWithDetails);
         return PageResponseDto.from(dtoPage);
     }
-    
-    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword, Pageable pageable) {
-        Page<PurchaseOrder> purchaseOrderPage;
-        if (StringUtils.hasText(keyword)) {
-            purchaseOrderPage = purchaseOrderRepository.searchByStatus(keyword, PurchaseOrderStatus.RECEIVED, pageable);
-        } else {
-            purchaseOrderPage = purchaseOrderRepository.findAllByStatus(PurchaseOrderStatus.RECEIVED, pageable);
-        }
-        Page<PurchaseOrderResponseDto> dtoPage = purchaseOrderPage.map(this::buildResponseWithDetails);
-        return PageResponseDto.from(dtoPage);
+
+    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword, PurchaseOrderStatus status, Pageable pageable) {
+        PurchaseOrderStatus finalStatus = (status == null) ? PurchaseOrderStatus.RECEIVED : status;
+        return getAllPurchaseOrders(keyword, finalStatus, pageable);
     }
 
     public PurchaseOrderResponseDto getPurchaseOrderById(Long id) {
@@ -72,9 +82,6 @@ public class PurchaseOrderService {
 
     @Transactional
     public PurchaseOrderResponseDto createPurchaseOrder(PurchaseOrderRequestDto request) {
-        if (purchaseOrderRepository.existsByCode(request.getCode())) {
-            throw new InvalidException(ErrorCode.CONFLICT_PURCHASE_ORDER_CODE);
-        }
 
         Supplier supplier = supplierRepository.findById(request.getSupplierId())
                 .orElseThrow(() -> new InvalidException(ErrorCode.SUPPLIER_NOT_FOUND));
@@ -82,7 +89,6 @@ public class PurchaseOrderService {
         User currentUser = getCurrentUser();
 
         PurchaseOrder purchaseOrder = PurchaseOrder.builder()
-                .code(request.getCode())
                 .supplier(supplier)
                 .createdBy(currentUser)
                 .orderDate(request.getOrderDate())
@@ -203,7 +209,6 @@ public class PurchaseOrderService {
         order.setSupplier(supplier);
         order.setNote(request.getNote());
 
-        // Xoá toàn bộ detail cũ, thay bằng detail mới
         purchaseOrderDetailRepository.deleteByPurchaseOrderId(order.getId());
 
         List<PurchaseOrderDetail> newDetails = buildDetails(request.getDetails(), order);

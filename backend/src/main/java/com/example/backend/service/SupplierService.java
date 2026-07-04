@@ -8,11 +8,12 @@ import com.example.backend.exception.InvalidException;
 import com.example.backend.mapper.SupplierMapper;
 import com.example.backend.model.Supplier;
 import com.example.backend.model.enums.Status;
-import com.example.backend.repository.PurchaseOrderRepository;
 import com.example.backend.repository.SupplierRepository;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -20,6 +21,8 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,18 +30,27 @@ import java.util.UUID;
 public class SupplierService {
 
     private final SupplierRepository supplierRepository;
-    private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierMapper supplierMapper;
 
-    public PageResponseDto<SupplierResponseDto> getAllSuppliers(String keyword, Pageable pageable) {
-        Page<Supplier> supplierPage;
-        if (StringUtils.hasText(keyword)) {
-            supplierPage = supplierRepository.search(keyword, pageable);
-        } else {
-            supplierPage = supplierRepository.findAll(pageable);
-        }
-        Page<SupplierResponseDto> dtoPage = supplierPage.map(supplierMapper::toResponse);
-        return PageResponseDto.from(dtoPage);
+    public PageResponseDto<SupplierResponseDto> getAllSuppliers(String keyword, Status status, Pageable pageable) {
+        Specification<Supplier> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(criteriaBuilder.notEqual(root.get("status"), Status.DELETED));
+            if (StringUtils.hasText(keyword)) {
+                String keywordLower = "%" + keyword.toLowerCase() + "%";
+                Predicate codePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), keywordLower);
+                Predicate namePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), keywordLower);
+                Predicate emailPredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), keywordLower);
+                Predicate phonePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("phone")), keywordLower);
+                predicates.add(criteriaBuilder.or(codePredicate, namePredicate, emailPredicate, phonePredicate));
+            }
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        Page<Supplier> supplierPage = supplierRepository.findAll(spec, pageable);
+        return PageResponseDto.from(supplierPage.map(supplierMapper::toResponse));
     }
 
     @Transactional
@@ -52,11 +64,8 @@ public class SupplierService {
         if (StringUtils.hasText(request.getTaxCode()) && supplierRepository.existsByTaxCode(request.getTaxCode())) {
             throw new InvalidException(ErrorCode.CONFLICT_SUPPLIER_TAX_CODE);
         }
-
         Supplier supplier = supplierMapper.toEntity(request);
-
         supplier.setCode(generateUniqueSupplierCode());
-
         supplier.setStatus(Status.ACTIVE);
         Supplier savedSupplier = supplierRepository.save(supplier);
         return supplierMapper.toResponse(savedSupplier);
@@ -99,7 +108,6 @@ public class SupplierService {
         if (request.getStatus() != null) {
             existingSupplier.setStatus(request.getStatus());
         }
-
         return supplierMapper.toResponse(existingSupplier);
     }
 
@@ -107,12 +115,7 @@ public class SupplierService {
     public void deleteSupplier(String code) {
         Supplier supplier = supplierRepository.findByCode(code)
                 .orElseThrow(() -> new InvalidException(ErrorCode.SUPPLIER_NOT_FOUND));
-
-        if (purchaseOrderRepository.existsBySupplierId(supplier.getId())) {
-            throw new InvalidException(ErrorCode.CANNOT_DELETE_SUPPLIER_HAS_PURCHASE_ORDER);
-        }
-
-        supplierRepository.delete(supplier);
+        supplier.setStatus(Status.DELETED);
     }
 
     private String generateUniqueSupplierCode() {

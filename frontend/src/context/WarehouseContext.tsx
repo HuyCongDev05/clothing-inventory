@@ -6,7 +6,6 @@ import type {
   ReceiptItem,
 } from "../types/payment.types";
 import type { PaymentMethod } from "../types/common.types";
-import { MOCK_RECEIPTS } from "../data/payments.mock";
 
 interface WarehouseContextValue {
   purchaseOrders: PurchaseOrder[];
@@ -24,40 +23,9 @@ interface WarehouseContextValue {
 const WarehouseContext = createContext<WarehouseContextValue | null>(null);
 
 export function WarehouseContextProvider({ children }: { children: ReactNode }) {
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([
-    {
-      id: "po-1",
-      code: "DDH-2026-001",
-      supplierId: "1",
-      supplierName: "Công ty TNHH Thời Trang Việt",
-      items: [
-        { id: "i1", sku: "AO-001", productName: "Áo sơ mi trắng công sở", quantity: 50, unitPrice: 150000, totalPrice: 7500000 },
-      ],
-      totalQuantity: 50,
-      totalAmount: 7500000,
-      status: "PENDING",
-      note: "",
-      createdAt: "2026-06-20",
-      approvedAt: null,
-    },
-    {
-      id: "po-2",
-      code: "DDH-2026-002",
-      supplierId: "2",
-      supplierName: "Xưởng May Phương Nam",
-      items: [
-        { id: "i2", sku: "DM-001", productName: "Đầm maxi hoa nhí", quantity: 40, unitPrice: 180000, totalPrice: 7200000 },
-      ],
-      totalQuantity: 40,
-      totalAmount: 7200000,
-      status: "APPROVED",
-      note: "Ưu tiên giao nhanh",
-      createdAt: "2026-06-22",
-      approvedAt: "2026-06-23",
-    },
-  ]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
-  const [warehouseReceipts, setWarehouseReceipts] = useState<WarehouseReceipt[]>(MOCK_RECEIPTS);
+  const [warehouseReceipts, setWarehouseReceipts] = useState<WarehouseReceipt[]>([]);
 
   const addPurchaseOrder = useCallback((order: Omit<PurchaseOrder, "id" | "code" | "createdAt" | "approvedAt" | "status">) => {
     const newId = `po-${Date.now()}`;

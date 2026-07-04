@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PurchaseOrder } from "../../../types/purchaseOrder.types";
 import { Input } from "../../../components/Input/Input";
 import { SearchBox } from "../../../components/SearchBox/SearchBox";
@@ -6,6 +6,7 @@ import { Button } from "../../../components/Button/Button";
 import { Card, CardHeader, CardBody } from "../../../components/Card/Card";
 import { Modal } from "../../../components/Modal/Modal";
 import { Table } from "../../../components/Table/Table";
+import { Select } from "../../../components/Select/Select";
 import { Pagination } from "../../../components/Pagination/Pagination";
 import { useToast } from "../../../components/Toast/ToastContext";
 import { getReceivedPurchaseOrdersPage } from "../../../services/purchaseOrder";
@@ -668,6 +669,7 @@ export function WarehouseReceiptPage() {
 
   const [sortBy, setSortBy] = useState<"receivedDate" | "totalAmount" | "totalQuantity">("receivedDate");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -685,11 +687,12 @@ export function WarehouseReceiptPage() {
 
   /** Xử lý khi người dùng bấm vào header cột có thể sort */
   const handleSort = (field: "receivedDate" | "totalAmount" | "totalQuantity") => {
+    console.log("[WarehouseReceipt Sort] Clicked:", field, "Current state:", { sortBy, sortDir });
     if (sortBy === field) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortBy(field);
-      setSortDir("desc");
+      setSortDir("asc");
     }
     setCurrentPage(1);
   };
@@ -700,11 +703,9 @@ export function WarehouseReceiptPage() {
     field: "receivedDate" | "totalAmount" | "totalQuantity",
   ) => {
     const isActive = sortBy === field;
-    const iconClass = isActive
-      ? sortDir === "asc"
-        ? "fi fi-rr-caret-up"
-        : "fi fi-rr-caret-down"
-      : "fi fi-rr-caret-down";
+    const isAsc = isActive && sortDir === "asc";
+    const iconClass = isAsc ? "fi fi-rr-caret-up" : "fi fi-rr-caret-down";
+
     return (
       <span
         className={styles.sortableHeader}
@@ -715,7 +716,7 @@ export function WarehouseReceiptPage() {
       >
         {label}
         <i
-          className={`${iconClass} ${isActive ? styles.sortIconActive : styles.sortIcon}`}
+          className={`${iconClass} ${isAsc ? styles.sortIconActive : styles.sortIcon}`}
         />
       </span>
     );
@@ -756,6 +757,11 @@ export function WarehouseReceiptPage() {
       active = false;
     };
   }, [fetchReceipts]);
+
+  const filteredReceipts = useMemo(() => {
+    if (!paymentStatusFilter) return receipts;
+    return receipts.filter((r) => r.paymentStatus === paymentStatusFilter);
+  }, [receipts, paymentStatusFilter]);
 
   const handlePaymentSuccess = useCallback(
     (updatedReceipt: PurchaseOrder) => {
@@ -858,6 +864,23 @@ export function WarehouseReceiptPage() {
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", maxWidth: "240px" }}>
+          <Select
+            id="paymentStatusFilter"
+            options={[
+              { value: "", label: "Tất cả thanh toán" },
+              { value: "PAID", label: "Đã thanh toán" },
+              { value: "PARTIALLY_PAID", label: "Thanh toán một phần" },
+              { value: "UNPAID", label: "Chưa thanh toán" },
+            ]}
+            value={paymentStatusFilter}
+            onChange={(e) => {
+              setPaymentStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+
         <Card>
           <CardHeader
             title="Danh sách phiếu nhập kho"
@@ -879,7 +902,7 @@ export function WarehouseReceiptPage() {
           <CardBody className={styles.tableBody}>
             <Table
               columns={columns}
-              data={receipts}
+              data={filteredReceipts}
               rowKey="id"
               loading={loading}
               emptyText="Chưa có phiếu nhập nào"

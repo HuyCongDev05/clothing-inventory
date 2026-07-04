@@ -108,3 +108,20 @@ export function getUserAuthorities(): string[] {
     return [];
   }
 }
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  roles: string[];
+}
+
+// Tạo tài khoản người dùng mới (chỉ admin)
+export async function registerUser(payload: RegisterRequest): Promise<void> {
+  await apiFetch<ApiResponse<unknown>>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

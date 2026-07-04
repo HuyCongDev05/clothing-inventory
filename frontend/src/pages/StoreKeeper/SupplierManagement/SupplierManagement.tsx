@@ -109,10 +109,10 @@ export function SupplierManagement() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [backendSearchResults, setBackendSearchResults] = useState<Supplier[]>(
-    [],
-  );
-  const [isBackendSearching, setIsBackendSearching] = useState(false);
+
+  const [sortBy, setSortBy] = useState<"name" | "email" | "phone" | "createdAt">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const { showToast } = useToast();
 
@@ -120,6 +120,7 @@ export function SupplierManagement() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -128,12 +129,16 @@ export function SupplierManagement() {
     const fetchSuppliers = async () => {
       try {
         setLoading(true);
-        if (!debouncedQuery) {
-          const data = await getSuppliersPage(currentPage);
-          setSuppliers(data.items);
-          setTotalElements(data.totalElements);
-          setPageSize(data.pageSize);
-        }
+        const data = await getSuppliersPage(
+          currentPage,
+          debouncedQuery || undefined,
+          statusFilter || undefined,
+          sortBy,
+          sortDir
+        );
+        setSuppliers(data.items);
+        setTotalElements(data.totalElements);
+        setPageSize(data.pageSize);
       } catch (err) {
         console.error("Failed to fetch suppliers from backend API:", err);
         showToast("Không thể tải danh sách nhà cung cấp từ máy chủ!", "error");
@@ -144,74 +149,42 @@ export function SupplierManagement() {
       }
     };
     fetchSuppliers();
-  }, [currentPage, refreshTrigger, showToast, debouncedQuery]);
+  }, [currentPage, refreshTrigger, showToast, debouncedQuery, sortBy, sortDir, statusFilter]);
 
-  const [prevQuery, setPrevQuery] = useState("");
-  if (debouncedQuery !== prevQuery) {
-    setPrevQuery(debouncedQuery);
-    setBackendSearchResults([]);
-  }
-
-  // Tìm kiếm hybrid: local trước, backend sau
-  useEffect(() => {
-    if (!debouncedQuery.trim()) {
-      return;
+  const handleSort = (field: "name" | "email" | "phone" | "createdAt") => {
+    console.log("[SupplierManagement Sort] Clicked:", field, "Current state:", { sortBy, sortDir });
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortDir("asc");
     }
+    setCurrentPage(1);
+  };
 
-    const lowerQuery = debouncedQuery.toLowerCase().trim();
-    const localMatches = suppliers.filter(
-      (s) =>
-        s.code.toLowerCase().includes(lowerQuery) ||
-        s.companyName.toLowerCase().includes(lowerQuery) ||
-        s.representative.toLowerCase().includes(lowerQuery) ||
-        s.contactPerson.toLowerCase().includes(lowerQuery) ||
-        s.email.toLowerCase().includes(lowerQuery) ||
-        (s.phone && s.phone.includes(lowerQuery)),
+  const buildSortHeader = (
+    label: string,
+    field: "name" | "email" | "phone" | "createdAt",
+  ) => {
+    const isActive = sortBy === field;
+    const isAsc = isActive && sortDir === "asc";
+    const iconClass = isAsc ? "fi fi-rr-caret-up" : "fi fi-rr-caret-down";
+
+    return (
+      <span
+        className={styles.sortableHeader}
+        onClick={() => handleSort(field)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && handleSort(field)}
+      >
+        {label}
+        <i
+          className={`${iconClass} ${isAsc ? styles.sortIconActive : styles.sortIcon}`}
+        />
+      </span>
     );
-
-    if (localMatches.length === 0) {
-      const performBackendSearch = async () => {
-        try {
-          setIsBackendSearching(true);
-          const data = await getSuppliersPage(1, debouncedQuery);
-          setBackendSearchResults(data.items);
-          setTotalElements(data.totalElements);
-        } catch (err) {
-          console.error("Backend search failed:", err);
-          setBackendSearchResults([]);
-        } finally {
-          setIsBackendSearching(false);
-        }
-      };
-      performBackendSearch();
-    }
-  }, [debouncedQuery, suppliers]);
-
-  // Danh sách NCC đã lọc
-  const displaySuppliers = (() => {
-    if (!debouncedQuery.trim()) {
-      return suppliers;
-    }
-
-    const lowerQuery = debouncedQuery.toLowerCase().trim();
-    // 1. Tìm local
-    const localMatches = suppliers.filter(
-      (s) =>
-        s.code.toLowerCase().includes(lowerQuery) ||
-        s.companyName.toLowerCase().includes(lowerQuery) ||
-        s.representative.toLowerCase().includes(lowerQuery) ||
-        s.contactPerson.toLowerCase().includes(lowerQuery) ||
-        s.email.toLowerCase().includes(lowerQuery) ||
-        (s.phone && s.phone.includes(lowerQuery)),
-    );
-
-    if (localMatches.length > 0) {
-      return localMatches;
-    }
-
-    // 2. Tìm qua API nếu local không có
-    return backendSearchResults;
-  })();
+  };
 
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
@@ -416,10 +389,10 @@ export function SupplierManagement() {
 
   const columns: TableColumn<Supplier>[] = [
     { key: "code", label: "Mã NCC", width: "165px" },
-    { key: "companyName", label: "Tên NCC" },
+    { key: "companyName", label: buildSortHeader("Tên NCC", "name") },
     { key: "contactPerson", label: "Người liên hệ" },
-    { key: "phone", label: "Số điện thoại", width: "135px" },
-    { key: "email", label: "Email" },
+    { key: "phone", label: buildSortHeader("Số điện thoại", "phone"), width: "135px" },
+    { key: "email", label: buildSortHeader("Email", "email") },
     {
       key: "status",
       label: "Trạng thái",
@@ -566,12 +539,28 @@ export function SupplierManagement() {
           <div>
             <h2 className={styles.title}>Quản lý nhà cung cấp</h2>
             <p className={styles.subtitle}>
-              {displaySuppliers.length} nhà cung cấp
+              {totalElements} nhà cung cấp
             </p>
           </div>
           <Button icon="fi fi-rr-add" onClick={openAdd} id="add-supplier-btn">
             Thêm mới
           </Button>
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", maxWidth: "240px" }}>
+          <Select
+            id="statusFilter"
+            options={[
+              { value: "", label: "Tất cả trạng thái" },
+              { value: "ACTIVE", label: "Đang hoạt động" },
+              { value: "INACTIVE", label: "Ngừng hoạt động" },
+            ]}
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         <Card>
@@ -587,7 +576,7 @@ export function SupplierManagement() {
             }
           />
           <CardBody className={styles.tableBody}>
-            {loading || isBackendSearching ? (
+            {loading ? (
               <div
                 style={{
                   padding: "40px",
@@ -601,7 +590,7 @@ export function SupplierManagement() {
               <>
                 <Table
                   columns={columns}
-                  data={displaySuppliers}
+                  data={suppliers}
                   rowKey="id"
                   emptyText="Không tìm thấy nhà cung cấp"
                 />

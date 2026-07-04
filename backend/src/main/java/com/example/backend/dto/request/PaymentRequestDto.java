@@ -2,12 +2,14 @@ package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 public class PaymentRequestDto {
 
     @NotNull(message = "Purchase order ID cannot be null")

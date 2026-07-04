@@ -27,6 +27,7 @@ export function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [categories, setCategories] = useState<CategoryResponseDto[]>([]);
@@ -147,6 +148,9 @@ export function ProductList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
+  const [sortBy, setSortBy] = useState<"name" | "brand" | "createdAt" | "updatedAt">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
   // Trạng thái xác nhận xóa
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [deleteVariantId, setDeleteVariantId] = useState<string | null>(null);
@@ -158,6 +162,7 @@ export function ProductList() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -169,6 +174,9 @@ export function ProductList() {
         const data = await getProductsPage(
           currentPage,
           debouncedQuery.trim() || undefined,
+          statusFilter || undefined,
+          sortBy,
+          sortDir
         );
         setProducts(data.items);
         setTotalElements(data.totalElements);
@@ -183,7 +191,42 @@ export function ProductList() {
       }
     };
     fetchProducts();
-  }, [currentPage, refreshTrigger, showToast, debouncedQuery]);
+  }, [currentPage, refreshTrigger, showToast, debouncedQuery, sortBy, sortDir, statusFilter]);
+
+  const handleSort = (field: "name" | "brand" | "createdAt" | "updatedAt") => {
+    console.log("[ProductList Sort] Clicked:", field, "Current state:", { sortBy, sortDir });
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortDir("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const buildSortHeader = (
+    label: string,
+    field: "name" | "brand" | "createdAt" | "updatedAt",
+  ) => {
+    const isActive = sortBy === field;
+    const isAsc = isActive && sortDir === "asc";
+    const iconClass = isAsc ? "fi fi-rr-caret-up" : "fi fi-rr-caret-down";
+
+    return (
+      <span
+        className={styles.sortableHeader}
+        onClick={() => handleSort(field)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && handleSort(field)}
+      >
+        {label}
+        <i
+          className={`${iconClass} ${isAsc ? styles.sortIconActive : styles.sortIcon}`}
+        />
+      </span>
+    );
+  };
 
   // Danh sách sản phẩm đã lọc
   const displayProducts = (() => {
@@ -802,13 +845,6 @@ export function ProductList() {
 
   const handleDeleteProduct = async () => {
     if (!deleteProductId) return;
-    const targetProduct = products.find((p) => p.id === deleteProductId);
-    if (targetProduct && targetProduct.variants.some((v) => v.stock > 0)) {
-      showToast("Không thể xóa vì tồn tại hóa đơn nhập hàng!", "warning");
-      setDeleteProductId(null);
-      return;
-    }
-
     try {
       await deleteProduct(deleteProductId);
       showToast("Đã xóa sản phẩm", "success");
@@ -843,14 +879,6 @@ export function ProductList() {
   };
 
   const handleBulkDelete = async () => {
-    const selectedVariants = selectedProduct?.variants.filter((v) => checkedVariantIds.has(v.id)) || [];
-    const withStock = selectedVariants.filter((v) => v.stock > 0);
-    if (withStock.length > 0) {
-      showToast("Không thể xóa vì tồn tại hóa đơn nhập hàng!", "warning");
-      setIsBulkDeleteConfirmOpen(false);
-      return;
-    }
-
     try {
       await deleteVariants([...checkedVariantIds]);
       setSelectedProduct((prev) =>
@@ -1485,11 +1513,11 @@ export function ProductList() {
         </div>
       ),
     },
-    { key: "name", label: "Tên sản phẩm" },
+    { key: "name", label: buildSortHeader("Tên sản phẩm", "name") },
     { key: "categoryLabel", label: "Danh mục", width: "140px" },
     {
       key: "brand",
-      label: "Thương hiệu",
+      label: buildSortHeader("Thương hiệu", "brand"),
       width: "140px",
       render: (val) => (val as string) || "—",
     },
@@ -1550,11 +1578,7 @@ export function ProductList() {
             icon="fi fi-rr-trash"
             onClick={(e) => {
               e.stopPropagation();
-              if (row.variants.some((v) => v.stock > 0)) {
-                showToast("Không thể xóa vì tồn tại hóa đơn nhập hàng!", "warning");
-              } else {
-                setDeleteProductId(row.id);
-              }
+              setDeleteProductId(row.id);
             }}
           >
             Xóa
@@ -1574,12 +1598,25 @@ export function ProductList() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", maxWidth: "240px" }}>
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", maxWidth: "480px" }}>
           <Select
             id="categoryFilter"
             options={categoryOptions}
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
+          />
+          <Select
+            id="statusFilter"
+            options={[
+              { value: "", label: "Tất cả trạng thái" },
+              { value: "ACTIVE", label: "Đang bán" },
+              { value: "INACTIVE", label: "Ngừng bán" },
+            ]}
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
 
@@ -1705,13 +1742,7 @@ export function ProductList() {
                           variant="danger"
                           icon="fi fi-rr-trash"
                           onClick={() => {
-                            const selectedVariants = selectedProduct?.variants.filter((v) => checkedVariantIds.has(v.id)) || [];
-                            const withStock = selectedVariants.filter((v) => v.stock > 0);
-                            if (withStock.length > 0) {
-                              showToast("Không thể xóa vì tồn tại hóa đơn nhập hàng!", "warning");
-                            } else {
-                              setIsBulkDeleteConfirmOpen(true);
-                            }
+                            setIsBulkDeleteConfirmOpen(true);
                           }}
                         >
                           Xóa hàng loạt
@@ -1824,11 +1855,7 @@ export function ProductList() {
                                     icon="fi fi-rr-trash"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (v.stock > 0) {
-                                        showToast(`Không thể xóa phiên bản SKU ${v.sku} vì tồn tại hóa đơn nhập hàng!`, "warning");
-                                      } else {
-                                        setDeleteVariantId(v.id);
-                                      }
+                                      setDeleteVariantId(v.id);
                                     }}
                                   >
                                     Xóa

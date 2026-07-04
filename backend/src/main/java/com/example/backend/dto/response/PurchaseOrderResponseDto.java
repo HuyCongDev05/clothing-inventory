@@ -1,12 +1,14 @@
 package com.example.backend.dto.response;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class PurchaseOrderResponseDto {
     private Long id;
     private String code;

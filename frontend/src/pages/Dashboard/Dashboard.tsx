@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import styles from "./Dashboard.module.css";
 import { Card, CardHeader, CardBody } from "../../components/Card/Card";
-import { MOCK_RECEIPTS } from "../../data/payments.mock";
 import { formatCurrency } from "../../utils/formatters";
 import { getSuppliersPage } from "../../services/supplier";
 import { getProductsPage } from "../../services/product";
@@ -19,7 +18,7 @@ import { ROUTES } from "../../constants/routes";
 import type { Product } from "../../types/product.types";
 import type { TableColumn } from "../../types/common.types";
 
-const totalRevenue = MOCK_RECEIPTS.reduce((s, r) => s + r.totalAmount, 0);
+const totalRevenue = 0;
 
 interface MockUser {
   uuid: string;
@@ -434,35 +433,9 @@ export function Dashboard() {
                   <span className={styles.recentTitle}>Phiếu nhập gần đây</span>
                 </div>
                 <div className={styles.recentList}>
-                  {MOCK_RECEIPTS.map((receipt) => (
-                    <div key={receipt.id} className={styles.recentItem}>
-                      <div className={styles.recentLeft}>
-                        <div className={styles.receiptIcon}>
-                          <i className="fi fi-rr-file-invoice" aria-hidden />
-                        </div>
-                        <div>
-                          <p className={styles.receiptCode}>{receipt.code}</p>
-                          <p className={styles.receiptSupplier}>{receipt.supplierName}</p>
-                        </div>
-                      </div>
-                      <div className={styles.recentRight}>
-                        <span className={styles.receiptAmount}>
-                          {formatCurrency(receipt.totalAmount)}
-                        </span>
-                        <span
-                          className={[styles.receiptStatus, styles[receipt.paymentStatus]].join(
-                            " "
-                          )}
-                        >
-                          {receipt.paymentStatus === "paid"
-                            ? "Đã thanh toán"
-                            : receipt.paymentStatus === "partial"
-                              ? "Một phần"
-                              : "Chưa thanh toán"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                  <div style={{ padding: "20px", textAlign: "center", color: "var(--color-subtext)" }}>
+                    Chưa có giao dịch gần đây
+                  </div>
                 </div>
               </Card>
 

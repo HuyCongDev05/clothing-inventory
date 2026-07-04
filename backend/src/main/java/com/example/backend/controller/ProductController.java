@@ -6,31 +6,43 @@ import com.example.backend.dto.request.VariantBulkPriceUpdateRequestDto;
 import com.example.backend.dto.request.VariantDeleteRequestDto;
 import com.example.backend.dto.response.PageResponseDto;
 import com.example.backend.dto.response.ProductResponseDto;
+import com.example.backend.model.enums.Status;
 import com.example.backend.service.ProductService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
+@Validated
 public class ProductController {
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("name", "brand", "createdAt", "updatedAt", "status");
 
     private final ProductService productService;
 
     @GetMapping
     public ResponseEntity<PageResponseDto<ProductResponseDto>> getAllProducts(
-            @RequestParam(name = "page", defaultValue = "1") int pageNumber,
-            @RequestParam(name = "keyword", required = false) String keyword) {
-        Pageable pageable = PageRequest.of(pageNumber - 1, 10);
-        return ResponseEntity.ok(productService.getAllProducts(keyword, pageable));
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page number must be greater than or equal to 1") int page,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Status status,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+
+        Pageable pageable = PageRequest.of(page - 1, 10, buildSort(sortBy, sortDirection));
+        return ResponseEntity.ok(productService.getAllProducts(keyword, status, pageable));
     }
 
     @PreAuthorize("hasAuthority('warehouse-staff')")
@@ -66,5 +78,11 @@ public class ProductController {
     public ResponseEntity<Void> deleteMultipleVariants(@Valid @RequestBody VariantDeleteRequestDto request) {
         productService.deleteMultipleVariants(request.getVariantIds());
         return ResponseEntity.noContent().build();
+    }
+
+    private Sort buildSort(String sortBy, String sortDir) {
+        String safeSortBy = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "createdAt";
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return Sort.by(direction, safeSortBy);
     }
 }
