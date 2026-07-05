@@ -44,7 +44,8 @@ public class PurchaseOrderService {
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final PurchaseOrderDetailMapper purchaseOrderDetailMapper;
 
-    public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, PurchaseOrderStatus status, Pageable pageable) {
+    public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, PurchaseOrderStatus status,
+            LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
         Specification<PurchaseOrder> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -53,12 +54,21 @@ public class PurchaseOrderService {
             if (StringUtils.hasText(keyword)) {
                 String keywordLower = "%" + keyword.toLowerCase() + "%";
                 Predicate codePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), keywordLower);
-                Predicate namePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("supplier").get("name")), keywordLower);
+                Predicate namePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("supplier").get("name")),
+                        keywordLower);
                 predicates.add(criteriaBuilder.or(codePredicate, namePredicate));
             }
 
             if (status != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            // Lọc theo khoảng thời gian orderDate
+            if (fromDate != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("orderDate"), fromDate));
+            }
+            if (toDate != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("orderDate"), toDate));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
@@ -69,9 +79,37 @@ public class PurchaseOrderService {
         return PageResponseDto.from(dtoPage);
     }
 
-    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword, PurchaseOrderStatus status, Pageable pageable) {
+    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword,
+            PurchaseOrderStatus status, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
         PurchaseOrderStatus finalStatus = (status == null) ? PurchaseOrderStatus.RECEIVED : status;
-        return getAllPurchaseOrders(keyword, finalStatus, pageable);
+
+        Specification<PurchaseOrder> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.equal(root.get("status"), finalStatus));
+
+            if (StringUtils.hasText(keyword)) {
+                String keywordLower = "%" + keyword.toLowerCase() + "%";
+                Predicate codePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), keywordLower);
+                Predicate namePredicate = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("supplier").get("name")), keywordLower);
+                predicates.add(criteriaBuilder.or(codePredicate, namePredicate));
+            }
+
+            // Lọc theo khoảng thời gian receivedDate (ngày nhập hàng)
+            if (fromDate != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("receivedDate"), fromDate));
+            }
+            if (toDate != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("receivedDate"), toDate));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<PurchaseOrder> page = purchaseOrderRepository.findAll(spec, pageable);
+        Page<PurchaseOrderResponseDto> dtoPage = page.map(this::buildResponseWithDetails);
+        return PageResponseDto.from(dtoPage);
     }
 
     public PurchaseOrderResponseDto getPurchaseOrderById(Long id) {
@@ -156,7 +194,7 @@ public class PurchaseOrderService {
                     .quantity(detail.getQuantity())
                     .quantityBefore(quantityBefore)
                     .quantityAfter(quantityAfter)
-                    .note("Receive purchase order " + order.getCode())
+                    .note("Nhập kho từ đơn đặt hàng " + order.getCode())
                     .createdBy(currentUser)
                     .build();
             transactions.add(transaction);
@@ -166,11 +204,10 @@ public class PurchaseOrderService {
     }
 
     private void validateStatusTransition(PurchaseOrderStatus current, PurchaseOrderStatus next) {
-        boolean valid =
-                (current == PurchaseOrderStatus.DRAFT    && next == PurchaseOrderStatus.PENDING)
-             || (current == PurchaseOrderStatus.PENDING  && next == PurchaseOrderStatus.RECEIVED)
-             || (current == PurchaseOrderStatus.DRAFT    && next == PurchaseOrderStatus.CANCELLED)
-             || (current == PurchaseOrderStatus.PENDING  && next == PurchaseOrderStatus.CANCELLED);
+        boolean valid = (current == PurchaseOrderStatus.DRAFT && next == PurchaseOrderStatus.PENDING)
+                || (current == PurchaseOrderStatus.PENDING && next == PurchaseOrderStatus.RECEIVED)
+                || (current == PurchaseOrderStatus.DRAFT && next == PurchaseOrderStatus.CANCELLED)
+                || (current == PurchaseOrderStatus.PENDING && next == PurchaseOrderStatus.CANCELLED);
 
         if (!valid) {
             throw new InvalidException(ErrorCode.INVALID_PURCHASE_ORDER_STATUS_TRANSITION);
@@ -178,7 +215,7 @@ public class PurchaseOrderService {
     }
 
     private List<PurchaseOrderDetail> buildDetails(List<PurchaseOrderDetailRequestDto> detailRequests,
-                                                   PurchaseOrder order) {
+            PurchaseOrder order) {
         List<PurchaseOrderDetail> details = new ArrayList<>();
         for (PurchaseOrderDetailRequestDto req : detailRequests) {
             ProductVariant variant = productVariantRepository.findById(req.getVariantId())
