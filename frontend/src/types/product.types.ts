@@ -12,14 +12,12 @@ export interface Variant {
   importPrice: number;
   salePrice: number;
   stock: number;
-  size?: string;
-  color?: string;
-  material?: string;
   note?: string;
   status?: string;
   option1Value?: string | null;
   option2Value?: string | null;
   option3Value?: string | null;
+  hasTransactions?: boolean;
 }
 
 export interface Product {
@@ -37,9 +35,6 @@ export interface Product {
   image: string;
   createdAt: string;
   updatedAt: string;
-  size?: string;
-  color?: string;
-  material?: string;
   brand?: string;
   status?: string;
   variants: Variant[];

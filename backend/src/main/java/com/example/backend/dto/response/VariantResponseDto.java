@@ -20,6 +20,7 @@ public class VariantResponseDto {
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Boolean hasTransactions;
 
     private Map<String, String> attributes;
 }

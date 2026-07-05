@@ -3,6 +3,7 @@ package com.example.backend.service;
 import com.example.backend.dto.request.ProductCreateRequestDto;
 import com.example.backend.dto.request.ProductUpdateRequestDto;
 import com.example.backend.dto.request.VariantBulkPriceUpdateRequestDto;
+import com.example.backend.dto.request.VariantUpdateRequestDto;
 import com.example.backend.dto.response.PageResponseDto;
 import com.example.backend.dto.response.ProductResponseDto;
 import com.example.backend.dto.response.ProductVariantDetailResponseDto;
@@ -11,18 +12,23 @@ import com.example.backend.exception.InvalidException;
 import com.example.backend.mapper.ProductMapper;
 import com.example.backend.mapper.ProductVariantMapper;
 import com.example.backend.model.Category;
+import com.example.backend.model.InventoryTransaction;
 import com.example.backend.model.Product;
 import com.example.backend.model.ProductVariant;
+import com.example.backend.model.User;
 import com.example.backend.model.enums.Status;
 import com.example.backend.repository.CategoryRepository;
+import com.example.backend.repository.InventoryTransactionRepository;
 import com.example.backend.repository.ProductRepository;
 import com.example.backend.repository.ProductVariantRepository;
 import com.example.backend.repository.PurchaseOrderDetailRepository;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Predicate;
+import com.example.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,10 +47,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final String TRANSACTION_TYPE_ADJUSTMENT = "ADJUSTMENT";
+
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
     private final CategoryRepository categoryRepository;
     private final PurchaseOrderDetailRepository purchaseOrderDetailRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final UserRepository userRepository;
     private final ProductMapper productMapper;
     private final ProductVariantMapper variantMapper;
 
@@ -67,7 +77,8 @@ public class ProductService {
         return PageResponseDto.from(productPage.map(productMapper::toResponse));
     }
 
-    public PageResponseDto<ProductVariantDetailResponseDto> getAllVariants(String keyword, Status status, Pageable pageable) {
+    public PageResponseDto<ProductVariantDetailResponseDto> getAllVariants(String keyword, Status status,
+            Pageable pageable) {
         Specification<ProductVariant> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.notEqual(root.get("status"), Status.DELETED));
@@ -76,7 +87,8 @@ public class ProductService {
                 String keywordLower = "%" + keyword.toLowerCase() + "%";
                 Join<ProductVariant, Product> product = root.join("product");
                 Predicate skuPredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("sku")), keywordLower);
-                Predicate productNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(product.get("name")), keywordLower);
+                Predicate productNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(product.get("name")),
+                        keywordLower);
                 predicates.add(criteriaBuilder.or(skuPredicate, productNamePredicate));
             }
 
@@ -103,7 +115,8 @@ public class ProductService {
         product.setStatus(Status.ACTIVE);
         product.setCode(generateUniqueProductCode());
         List<ProductVariant> variants = request.getVariants().stream().map(variantDto -> {
-            String sku = generateSku(product.getCode(), variantDto.getOption1Value(), variantDto.getOption2Value(), variantDto.getOption3Value());
+            String sku = generateSku(product.getCode(), variantDto.getOption1Value(), variantDto.getOption2Value(),
+                    variantDto.getOption3Value());
             return ProductVariant.builder()
                     .product(product)
                     .sku(sku)
@@ -137,13 +150,20 @@ public class ProductService {
                     .orElseThrow(() -> new InvalidException(ErrorCode.CATEGORY_NOT_FOUND));
             product.setCategory(category);
         }
-        if (request.getName() != null) product.setName(request.getName());
-        if (request.getBrand() != null) product.setBrand(request.getBrand());
-        if (request.getUnit() != null) product.setUnit(request.getUnit());
-        if (request.getDescription() != null) product.setDescription(request.getDescription());
-        if (request.getOption1Name() != null) product.setOption1Name(request.getOption1Name());
-        if (request.getOption2Name() != null) product.setOption2Name(request.getOption2Name());
-        if (request.getOption3Name() != null) product.setOption3Name(request.getOption3Name());
+        if (request.getName() != null)
+            product.setName(request.getName());
+        if (request.getBrand() != null)
+            product.setBrand(request.getBrand());
+        if (request.getUnit() != null)
+            product.setUnit(request.getUnit());
+        if (request.getDescription() != null)
+            product.setDescription(request.getDescription());
+        if (request.getOption1Name() != null)
+            product.setOption1Name(request.getOption1Name());
+        if (request.getOption2Name() != null)
+            product.setOption2Name(request.getOption2Name());
+        if (request.getOption3Name() != null)
+            product.setOption3Name(request.getOption3Name());
         if (request.getStatus() != null && request.getStatus() != product.getStatus()) {
             product.setStatus(request.getStatus());
             product.getVariants().forEach(v -> v.setStatus(request.getStatus()));
@@ -170,7 +190,8 @@ public class ProductService {
         }
     }
 
-    private void createOrUpdateVariants(Product product, List<ProductUpdateRequestDto.VariantUpdateItem> variantItems, Map<Long, ProductVariant> existingVariantsMap) {
+    private void createOrUpdateVariants(Product product, List<ProductUpdateRequestDto.VariantUpdateItem> variantItems,
+            Map<Long, ProductVariant> existingVariantsMap) {
         for (ProductUpdateRequestDto.VariantUpdateItem item : variantItems) {
             if (item.getId() == null) {
                 createNewVariant(product, item);
@@ -181,7 +202,8 @@ public class ProductService {
     }
 
     private void createNewVariant(Product product, ProductUpdateRequestDto.VariantUpdateItem item) {
-        String sku = generateSku(product.getCode(), item.getOption1Value(), item.getOption2Value(), item.getOption3Value());
+        String sku = generateSku(product.getCode(), item.getOption1Value(), item.getOption2Value(),
+                item.getOption3Value());
         ProductVariant newVariant = ProductVariant.builder()
                 .product(product)
                 .sku(sku)
@@ -196,34 +218,124 @@ public class ProductService {
         product.getVariants().add(newVariant);
     }
 
-    private void updateExistingVariant(Product product, ProductUpdateRequestDto.VariantUpdateItem item, ProductVariant existingVariant) {
+    private void updateExistingVariant(Product product, ProductUpdateRequestDto.VariantUpdateItem item,
+            ProductVariant existingVariant) {
         if (existingVariant == null) {
             throw new InvalidException(ErrorCode.VARIANT_NOT_FOUND);
         }
         boolean hasTransactions = purchaseOrderDetailRepository.existsByVariantId(existingVariant.getId());
         if (hasTransactions) {
-            if (item.getPurchasePrice() != null) existingVariant.setPurchasePrice(item.getPurchasePrice());
-            if (item.getSalePrice() != null) existingVariant.setSalePrice(item.getSalePrice());
-            if (item.getStatus() != null) existingVariant.setStatus(item.getStatus());
+            boolean optionsChanged = !Objects.equals(item.getOption1Value(), existingVariant.getOption1Value()) ||
+                    !Objects.equals(item.getOption2Value(), existingVariant.getOption2Value()) ||
+                    !Objects.equals(item.getOption3Value(), existingVariant.getOption3Value());
+            if (optionsChanged) {
+                throw new InvalidException(ErrorCode.CANNOT_UPDATE_VARIANT_HAS_TRANSACTIONS);
+            }
+            if (item.getPurchasePrice() != null)
+                existingVariant.setPurchasePrice(item.getPurchasePrice());
+            if (item.getSalePrice() != null)
+                existingVariant.setSalePrice(item.getSalePrice());
+            if (item.getStatus() != null)
+                existingVariant.setStatus(item.getStatus());
         } else {
             updateVariantFreely(product, item, existingVariant);
         }
     }
 
-    private void updateVariantFreely(Product product, ProductUpdateRequestDto.VariantUpdateItem item, ProductVariant existingVariant) {
+    private void updateVariantFreely(Product product, ProductUpdateRequestDto.VariantUpdateItem item,
+            ProductVariant existingVariant) {
         existingVariant.setOption1Value(item.getOption1Value());
         existingVariant.setOption2Value(item.getOption2Value());
         existingVariant.setOption3Value(item.getOption3Value());
-        if (item.getPurchasePrice() != null) existingVariant.setPurchasePrice(item.getPurchasePrice());
-        if (item.getSalePrice() != null) existingVariant.setSalePrice(item.getSalePrice());
-        if (item.getStatus() != null) existingVariant.setStatus(item.getStatus());
-        String newSku = generateSku(product.getCode(), item.getOption1Value(), item.getOption2Value(), item.getOption3Value());
+        if (item.getPurchasePrice() != null)
+            existingVariant.setPurchasePrice(item.getPurchasePrice());
+        if (item.getSalePrice() != null)
+            existingVariant.setSalePrice(item.getSalePrice());
+        if (item.getStatus() != null)
+            existingVariant.setStatus(item.getStatus());
+        String newSku = generateSku(product.getCode(), item.getOption1Value(), item.getOption2Value(),
+                item.getOption3Value());
         if (!newSku.equals(existingVariant.getSku())) {
             if (variantRepository.existsBySku(newSku)) {
                 throw new InvalidException(ErrorCode.SKU_ALREADY_EXISTS);
             }
             existingVariant.setSku(newSku);
         }
+    }
+
+    @Transactional
+    public ProductResponseDto updateVariant(Long variantId, VariantUpdateRequestDto request) {
+        ProductVariant variant = variantRepository.findById(variantId)
+                .orElseThrow(() -> new InvalidException(ErrorCode.VARIANT_NOT_FOUND));
+
+        // Cập nhật các trường cơ bản
+        if (request.getPurchasePrice() != null)
+            variant.setPurchasePrice(request.getPurchasePrice());
+        if (request.getSalePrice() != null)
+            variant.setSalePrice(request.getSalePrice());
+        if (request.getStatus() != null)
+            variant.setStatus(request.getStatus());
+
+        boolean hasTransactions = purchaseOrderDetailRepository.existsByVariantId(variantId);
+        if (hasTransactions) {
+            boolean optionsChanged = !Objects.equals(request.getOption1Value(), variant.getOption1Value()) ||
+                    !Objects.equals(request.getOption2Value(), variant.getOption2Value()) ||
+                    !Objects.equals(request.getOption3Value(), variant.getOption3Value());
+            if (optionsChanged) {
+                throw new InvalidException(ErrorCode.CANNOT_UPDATE_VARIANT_HAS_TRANSACTIONS);
+            }
+        } else {
+            // Chỉ cho phép sửa option values khi chưa có giao dịch
+            variant.setOption1Value(request.getOption1Value());
+            variant.setOption2Value(request.getOption2Value());
+            variant.setOption3Value(request.getOption3Value());
+
+            String newSku = generateSku(
+                    variant.getProduct().getCode(),
+                    request.getOption1Value(),
+                    request.getOption2Value(),
+                    request.getOption3Value());
+            if (!newSku.equals(variant.getSku())) {
+                if (variantRepository.existsBySku(newSku)) {
+                    throw new InvalidException(ErrorCode.SKU_ALREADY_EXISTS);
+                }
+                variant.setSku(newSku);
+            }
+        }
+
+        // Xử lý thay đổi số lượng tồn kho
+        if (request.getQuantityOnHand() != null) {
+            Integer quantityBefore = variant.getQuantityOnHand();
+            Integer quantityAfter = request.getQuantityOnHand();
+
+            if (!quantityBefore.equals(quantityAfter)) {
+                variant.setQuantityOnHand(quantityAfter);
+
+                User currentUser = getCurrentUser();
+                InventoryTransaction transaction = InventoryTransaction.builder()
+                        .variant(variant)
+                        .purchaseOrderDetail(null)
+                        .transactionType(TRANSACTION_TYPE_ADJUSTMENT)
+                        .quantity(quantityAfter - quantityBefore)
+                        .quantityBefore(quantityBefore)
+                        .quantityAfter(quantityAfter)
+                        .note(request.getAdjustReason())
+                        .createdBy(currentUser)
+                        .build();
+                inventoryTransactionRepository.save(transaction);
+            }
+        }
+
+        // Đồng bộ trạng thái sản phẩm cha
+        syncParentStatus(variant.getProduct());
+
+        return productMapper.toResponse(variant.getProduct());
+    }
+
+    private User getCurrentUser() {
+        String uuid = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUuid(uuid)
+                .orElseThrow(() -> new InvalidException(ErrorCode.ACCOUNT_NOT_FOUND));
     }
 
     @Transactional
@@ -267,9 +379,12 @@ public class ProductService {
             if (purchaseOrderDetailRepository.existsByVariantId(variant.getId())) {
                 throw new InvalidException(ErrorCode.CANNOT_UPDATE_VARIANT_HAS_TRANSACTIONS);
             }
-            if (request.getPurchasePrice() != null) variant.setPurchasePrice(request.getPurchasePrice());
-            if (request.getSalePrice() != null) variant.setSalePrice(request.getSalePrice());
-            if (request.getStatus() != null) variant.setStatus(request.getStatus());
+            if (request.getPurchasePrice() != null)
+                variant.setPurchasePrice(request.getPurchasePrice());
+            if (request.getSalePrice() != null)
+                variant.setSalePrice(request.getSalePrice());
+            if (request.getStatus() != null)
+                variant.setStatus(request.getStatus());
         }
         affectedProducts.forEach(this::syncParentStatus);
         return affectedProducts.stream()
@@ -291,7 +406,8 @@ public class ProductService {
     private String generateUniqueProductCode() {
         String newCode;
         do {
-            String datePart = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(DateTimeFormatter.ofPattern("yyMMdd"));
+            String datePart = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))
+                    .format(DateTimeFormatter.ofPattern("yyMMdd"));
             String randomPart = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
             newCode = "SP-" + datePart + "-" + randomPart;
         } while (productRepository.existsByCode(newCode));

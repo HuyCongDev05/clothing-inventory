@@ -12,10 +12,11 @@ export interface VariantResponseDto {
   status: string;
   createdAt: string;
   updatedAt: string;
+  // Backend trả về attributes dạng Map<optionName, optionValue>
+  // Ví dụ: { "Màu sắc": "Đỏ", "Kích thước": "M" }
+  // Không có option1Value/2/3Value riêng lẻ
   attributes?: Record<string, string>;
-  option1Value?: string | null;
-  option2Value?: string | null;
-  option3Value?: string | null;
+  hasTransactions?: boolean;
 }
 
 export interface ProductVariantDetailResponseDto {
@@ -85,11 +86,13 @@ export function mapBackendVariantToFrontend(
   option2Name?: string | null,
   option3Name?: string | null,
 ): Variant {
-  // Đọc giá trị positional từ attributes map theo đúng key là tên option
-  const attrs = v.attributes || {};
-  const option1Value = (option1Name ? (attrs[option1Name] ?? null) : null) ?? v.option1Value ?? null;
-  const option2Value = (option2Name ? (attrs[option2Name] ?? null) : null) ?? v.option2Value ?? null;
-  const option3Value = (option3Name ? (attrs[option3Name] ?? null) : null) ?? v.option3Value ?? null;
+  // Backend trả về attributes dạng Map<optionName, optionValue>
+  // Ví dụ: { "Màu sắc": "Đỏ", "Kích thước": "M" }
+  // Tra cứu giá trị theo đúng tên thuộc tính người dùng đã định nghĩa
+  const attrs = v.attributes ?? {};
+  const option1Value = (option1Name ? (attrs[option1Name] ?? null) : null);
+  const option2Value = (option2Name ? (attrs[option2Name] ?? null) : null);
+  const option3Value = (option3Name ? (attrs[option3Name] ?? null) : null);
 
   return {
     id: String(v.id),
@@ -102,6 +105,7 @@ export function mapBackendVariantToFrontend(
     option1Value,
     option2Value,
     option3Value,
+    hasTransactions: v.hasTransactions || false,
   };
 }
 
@@ -321,6 +325,8 @@ export interface VariantUpdatePayload {
   purchasePrice: number;
   salePrice: number;
   status: string;
+  quantityOnHand?: number | null;
+  adjustReason?: string | null;
 }
 
 export async function updateVariant(
