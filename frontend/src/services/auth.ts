@@ -184,6 +184,11 @@ export async function getUsersPage(
   };
 }
 
+export async function getUserById(id: string): Promise<UserResponse> {
+  const response = await apiFetch<ApiResponse<UserResponse>>(`/users/${id}`);
+  return response.data;
+}
+
 // Cập nhật thông tin tài khoản (chỉ admin)
 export async function updateUser(
   uuid: string,

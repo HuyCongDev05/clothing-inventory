@@ -111,6 +111,12 @@ public class SupplierService {
         return supplierMapper.toResponse(existingSupplier);
     }
 
+    public SupplierResponseDto getSupplierById(Long id) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new InvalidException(ErrorCode.SUPPLIER_NOT_FOUND));
+        return supplierMapper.toResponse(supplier);
+    }
+
     @Transactional
     public void deleteSupplier(String code) {
         Supplier supplier = supplierRepository.findByCode(code)

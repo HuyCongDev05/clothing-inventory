@@ -9,6 +9,9 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog/ConfirmDialog";
 import { Table } from "../../../components/Table/Table";
 import { Pagination } from "../../../components/Pagination/Pagination";
 import { useToast } from "../../../components/Toast/ToastContext";
+import { SupplierDetailModal } from "../../../components/SupplierDetailModal/SupplierDetailModal";
+import { VariantDetailModal } from "../../../components/VariantDetailModal/VariantDetailModal";
+import { UserDetailModal } from "../../../components/UserDetailModal/UserDetailModal";
 import { getSuppliersPage } from "../../../services/supplier";
 import { getProductsPage } from "../../../services/product";
 import {
@@ -301,6 +304,12 @@ export function PurchaseOrderPage() {
     { ...EMPTY_LINE, _key: "1" },
   ]);
   const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // State cho quick-view modals
+  const [quickViewSupplierId, setQuickViewSupplierId] = useState<string | null>(null);
+  const [quickViewVariantId, setQuickViewVariantId] = useState<string | null>(null);
+  const [quickViewUserId, setQuickViewUserId] = useState<string | null>(null);
+  const [quickViewUserName, setQuickViewUserName] = useState<string>("");
 
   useEffect(() => {
     getSuppliersPage(1)
@@ -749,7 +758,15 @@ export function PurchaseOrderPage() {
       <div className={styles.detailHeader}>
         <div>
           <div className={styles.detailCode}>{order.code}</div>
-          <div className={styles.detailSupplier}>{order.supplierName}</div>
+          <div className={styles.detailSupplier}>
+            <button
+              className={styles.clickableLink}
+              onClick={() => setQuickViewSupplierId(order.supplierId)}
+              title="Xem chi tiết nhà cung cấp"
+            >
+              {order.supplierName}
+            </button>
+          </div>
         </div>
         <span className={[styles.badge, styles[order.status]].join(" ")}>
           {ORDER_STATUS_LABEL[order.status] ?? order.status}
@@ -769,7 +786,17 @@ export function PurchaseOrderPage() {
         )}
         <span>
           <i className="fi fi-rr-user" style={{ marginRight: 4 }} />
-          Người tạo: {order.createdByName}
+          Người tạo:{" "}
+          <button
+            className={styles.clickableLink}
+            onClick={() => {
+              setQuickViewUserId(order.createdById);
+              setQuickViewUserName(order.createdByName);
+            }}
+            title="Xem thông tin người tạo"
+          >
+            {order.createdByName}
+          </button>
         </span>
         {order.note && (
           <span>
@@ -801,7 +828,13 @@ export function PurchaseOrderPage() {
                   )}
                 </div>
                 <div style={{ color: "var(--color-subtext)", fontSize: "0.75rem", marginTop: 2 }}>
-                  {item.sku}
+                  <button
+                    className={styles.clickableLink}
+                    onClick={() => setQuickViewVariantId(item.variantId)}
+                    title="Xem chi tiết phiên bản sản phẩm"
+                  >
+                    {item.sku}
+                  </button>
                 </div>
               </td>
               <td style={{ textAlign: "right" }}>{item.quantity}</td>
@@ -1196,6 +1229,21 @@ export function PurchaseOrderPage() {
           confirmCancel && handleUpdateStatus(confirmCancel, "CANCELLED")
         }
         onCancel={() => setConfirmCancel(null)}
+      />
+
+      {/* Quick-view modals: thông tin tương tác read-only */}
+      <SupplierDetailModal
+        supplierId={quickViewSupplierId}
+        onClose={() => setQuickViewSupplierId(null)}
+      />
+      <VariantDetailModal
+        variantId={quickViewVariantId}
+        onClose={() => setQuickViewVariantId(null)}
+      />
+      <UserDetailModal
+        userId={quickViewUserId}
+        userName={quickViewUserName}
+        onClose={() => { setQuickViewUserId(null); setQuickViewUserName(""); }}
       />
     </section>
   );

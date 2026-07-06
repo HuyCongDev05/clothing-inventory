@@ -9,6 +9,9 @@ import { Table } from "../../../components/Table/Table";
 import { Select } from "../../../components/Select/Select";
 import { Pagination } from "../../../components/Pagination/Pagination";
 import { useToast } from "../../../components/Toast/ToastContext";
+import { SupplierDetailModal } from "../../../components/SupplierDetailModal/SupplierDetailModal";
+import { VariantDetailModal } from "../../../components/VariantDetailModal/VariantDetailModal";
+import { UserDetailModal } from "../../../components/UserDetailModal/UserDetailModal";
 import { getReceivedPurchaseOrdersPage } from "../../../services/purchaseOrder";
 import {
   getPaymentMethods,
@@ -136,10 +139,12 @@ function PaymentModal({
   receipt,
   onClose,
   onSuccess,
+  onUserClick,
 }: {
   receipt: PurchaseOrder;
   onClose: () => void;
   onSuccess: (updatedReceipt: PurchaseOrder) => void;
+  onUserClick?: (userId: string, userName: string) => void;
 }) {
   const { showToast } = useToast();
 
@@ -337,6 +342,18 @@ function PaymentModal({
     {
       key: "createdByName",
       label: "Người thực hiện",
+      render: (val, row) =>
+        onUserClick ? (
+          <button
+            className={styles.clickableLink}
+            onClick={() => onUserClick(String((row as PaymentRecord).createdById), String(val))}
+            title="Xem thông tin người thực hiện"
+          >
+            {String(val)}
+          </button>
+        ) : (
+          String(val)
+        ),
     },
     {
       key: "note",
@@ -582,10 +599,14 @@ function ReceiptDetailView({
   receipt,
   onClose,
   onPay,
+  onSupplierClick,
+  onVariantClick,
 }: {
   receipt: PurchaseOrder;
   onClose: () => void;
   onPay: () => void;
+  onSupplierClick?: (supplierId: string) => void;
+  onVariantClick?: (variantId: string) => void;
 }) {
   const payStatus = PAYMENT_STATUS_LABEL[receipt.paymentStatus] ?? receipt.paymentStatus;
   const payColor = PAYMENT_STATUS_COLOR[receipt.paymentStatus] ?? { bg: "#fee2e2", text: "#991b1b" };
@@ -597,7 +618,17 @@ function ReceiptDetailView({
         <div>
           <div style={{ fontWeight: 700, fontSize: "1rem" }}>{receipt.code}</div>
           <div style={{ color: "var(--color-subtext)", fontSize: "0.875rem", marginTop: 4 }}>
-            {receipt.supplierName}
+            {onSupplierClick ? (
+              <button
+                className={styles.clickableLink}
+                onClick={() => onSupplierClick(receipt.supplierId)}
+                title="Xem chi tiết nhà cung cấp"
+              >
+                {receipt.supplierName}
+              </button>
+            ) : (
+              receipt.supplierName
+            )}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
@@ -671,7 +702,17 @@ function ReceiptDetailView({
                 {formatVariantName(item.productName, item.option1Value, item.option2Value, item.option3Value)}
               </td>
               <td style={{ padding: "10px 12px", color: "var(--color-subtext)", fontSize: "0.8rem" }}>
-                {item.sku}
+                {onVariantClick ? (
+                  <button
+                    className={styles.clickableLink}
+                    onClick={() => onVariantClick(item.variantId)}
+                    title="Xem chi tiết phiên bản sản phẩm"
+                  >
+                    {item.sku}
+                  </button>
+                ) : (
+                  item.sku
+                )}
               </td>
               <td style={{ padding: "10px 12px", textAlign: "right" }}>{item.quantity}</td>
               <td style={{ padding: "10px 12px", textAlign: "right" }}>
@@ -742,6 +783,12 @@ export function WarehouseReceiptPage() {
 
   const [detailReceipt, setDetailReceipt] = useState<PurchaseOrder | null>(null);
   const [paymentReceipt, setPaymentReceipt] = useState<PurchaseOrder | null>(null);
+
+  // State cho quick-view modals
+  const [quickViewSupplierId, setQuickViewSupplierId] = useState<string | null>(null);
+  const [quickViewVariantId, setQuickViewVariantId] = useState<string | null>(null);
+  const [quickViewUserId, setQuickViewUserId] = useState<string | null>(null);
+  const [quickViewUserName, setQuickViewUserName] = useState<string>("");
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -1073,6 +1120,8 @@ export function WarehouseReceiptPage() {
               setPaymentReceipt(detailReceipt);
               setDetailReceipt(null);
             }}
+            onSupplierClick={setQuickViewSupplierId}
+            onVariantClick={setQuickViewVariantId}
           />
         )}
       </Modal>
@@ -1091,9 +1140,25 @@ export function WarehouseReceiptPage() {
               handlePaymentSuccess(updated);
               setPaymentReceipt(updated);
             }}
+            onUserClick={(id, name) => { setQuickViewUserId(id); setQuickViewUserName(name); }}
           />
         )}
       </Modal>
+
+      {/* Quick-view modals: thông tin tương tác read-only */}
+      <SupplierDetailModal
+        supplierId={quickViewSupplierId}
+        onClose={() => setQuickViewSupplierId(null)}
+      />
+      <VariantDetailModal
+        variantId={quickViewVariantId}
+        onClose={() => setQuickViewVariantId(null)}
+      />
+      <UserDetailModal
+        userId={quickViewUserId}
+        userName={quickViewUserName}
+        onClose={() => { setQuickViewUserId(null); setQuickViewUserName(""); }}
+      />
     </section>
   );
 }

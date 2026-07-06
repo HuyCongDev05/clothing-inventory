@@ -183,6 +183,11 @@ export async function getProductsPage(
   };
 }
 
+export async function getVariantById(variantId: string): Promise<ProductVariantDetailResponseDto> {
+  const response = await apiFetch<ApiResponse<ProductVariantDetailResponseDto>>(`/products/variants/${variantId}`);
+  return response.data;
+}
+
 export interface PaginatedLowStock {
   items: ProductVariantDetailResponseDto[];
   page: number;

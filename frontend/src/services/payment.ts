@@ -52,6 +52,7 @@ export interface PaymentRecord {
   paymentDate: string;
   amount: number;
   note: string | null;
+  createdById: number;
   createdByName: string;
   totalPaidAmount: number;
   remainingAmount: number;
@@ -97,6 +98,7 @@ function mapBackendPaymentToFrontend(p: BackendPaymentResponse): PaymentRecord {
     paymentDate: p.paymentDate,
     amount: Number(p.amount) || 0,
     note: p.note ?? null,
+    createdById: p.createdById,
     createdByName: p.createdByName,
     totalPaidAmount: Number(p.totalPaidAmount) || 0,
     remainingAmount: Number(p.remainingAmount) || 0,
