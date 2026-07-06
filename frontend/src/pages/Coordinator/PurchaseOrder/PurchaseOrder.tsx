@@ -810,6 +810,7 @@ export function PurchaseOrderPage() {
         <thead>
           <tr>
             <th>Tên sản phẩm</th>
+            <th>SKU</th>
             <th style={{ width: 60, textAlign: "right" }}>SL</th>
             <th style={{ width: 130, textAlign: "right" }}>Đơn giá</th>
             <th style={{ width: 130, textAlign: "right" }}>Thành tiền</th>
@@ -827,15 +828,15 @@ export function PurchaseOrderPage() {
                     item.option3Value,
                   )}
                 </div>
-                <div style={{ color: "var(--color-subtext)", fontSize: "0.75rem", marginTop: 2 }}>
-                  <button
-                    className={styles.clickableLink}
-                    onClick={() => setQuickViewVariantId(item.variantId)}
-                    title="Xem chi tiết phiên bản sản phẩm"
-                  >
-                    {item.sku}
-                  </button>
-                </div>
+              </td>
+              <td style={{ color: "var(--color-subtext)", fontSize: "0.8rem" }}>
+                <button
+                  className={styles.clickableLink}
+                  onClick={() => setQuickViewVariantId(item.variantId)}
+                  title="Xem chi tiết phiên bản sản phẩm"
+                >
+                  {item.sku}
+                </button>
               </td>
               <td style={{ textAlign: "right" }}>{item.quantity}</td>
               <td style={{ textAlign: "right" }}>

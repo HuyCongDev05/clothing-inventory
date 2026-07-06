@@ -12,6 +12,7 @@ import type { TableColumn } from "../../../types/common.types";
 import { formatCurrency, formatDateTime } from "../../../utils/formatters";
 import { getProductsPage, deleteProduct, deleteVariant, deleteVariants, bulkUpdateVariantPrices, updateProduct, mapBackendProductToFrontend, type ProductUpdatePayload, updateVariant, type VariantUpdatePayload, getCategories, type CategoryResponseDto } from "../../../services/product";
 import { Modal } from "../../../components/Modal/Modal";
+import { UserDetailModal } from "../../../components/UserDetailModal/UserDetailModal";
 import { Button } from "../../../components/Button/Button";
 import { useToast } from "../../../components/Toast/ToastContext";
 import { Input } from "../../../components/Input/Input";
@@ -46,6 +47,8 @@ export function ProductList() {
     status: "ACTIVE",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [quickViewUserId, setQuickViewUserId] = useState<string | null>(null);
+  const [quickViewUserName, setQuickViewUserName] = useState<string>("");
 
   useEffect(() => {
     getCategories()
@@ -2241,7 +2244,21 @@ export function ProductList() {
                                 )}
                               </td>
                               <td style={{ color: "var(--color-subtext)" }}>
-                                {tx.createdByName || String(tx.createdBy)}
+                                {tx.createdBy ? (
+                                  <button
+                                    className={styles.clickableLink}
+                                    onClick={() => {
+                                      setQuickViewUserId(String(tx.createdBy));
+                                      setQuickViewUserName(tx.createdByName || String(tx.createdBy));
+                                    }}
+                                    title="Xem thông tin người tạo"
+                                    type="button"
+                                  >
+                                    {tx.createdByName || String(tx.createdBy)}
+                                  </button>
+                                ) : (
+                                  "—"
+                                )}
                               </td>
                               <td style={{ color: "var(--color-subtext)", whiteSpace: "nowrap" }}>
                                 {formatDateTime(tx.createdAt)}
@@ -2455,6 +2472,16 @@ export function ProductList() {
           </div>
         )}
       </Modal>
+
+      {/* Quick-view User Modal */}
+      <UserDetailModal
+        userId={quickViewUserId}
+        userName={quickViewUserName}
+        onClose={() => {
+          setQuickViewUserId(null);
+          setQuickViewUserName("");
+        }}
+      />
     </section>
   );
 }

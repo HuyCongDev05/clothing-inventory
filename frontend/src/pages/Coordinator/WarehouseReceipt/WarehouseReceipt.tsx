@@ -647,7 +647,7 @@ function ReceiptDetailView({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 20, fontSize: "0.8rem", color: "var(--color-subtext)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.8rem", color: "var(--color-subtext)" }}>
         <span>
           <i className="fi fi-rr-calendar" style={{ marginRight: 4 }} />
           Ngày đặt: {formatDateTime(receipt.orderDate)}

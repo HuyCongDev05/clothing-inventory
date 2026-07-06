@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "../Modal/Modal";
 import { Button } from "../Button/Button";
 import { getUserById, type UserResponse } from "../../services/auth";
+import styles from "./UserDetailModal.module.css";
 
 interface UserDetailModalProps {
   userId: string | null;
@@ -32,20 +33,24 @@ function formatDateTime(dateStr?: string): string {
 }
 
 export function UserDetailModal({ userId, userName, onClose }: UserDetailModalProps) {
+  const [prevUserId, setPrevUserId] = useState<string | null>(null);
   const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  if (userId !== prevUserId) {
+    setPrevUserId(userId);
+    setUser(null);
+    setError(null);
+    setLoading(!!userId);
+  }
+
   useEffect(() => {
     if (!userId) {
-      setUser(null);
-      setError(null);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     getUserById(userId)
       .then((data) => {
@@ -84,98 +89,52 @@ export function UserDetailModal({ userId, userName, onClose }: UserDetailModalPr
       {user && !loading && (
         <>
           {/* Avatar + tên */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              padding: "16px",
-              marginBottom: "12px",
-              backgroundColor: "var(--color-bg)",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                backgroundColor: "var(--color-primary-light, var(--color-hover))",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "1.4rem",
-                color: "var(--color-primary)",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
+          <div className={styles.avatarSection}>
+            <div className={styles.avatar}>
               {user.fullName?.charAt(0)?.toUpperCase() ?? "?"}
             </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "var(--font-md)", color: "var(--color-text)" }}>
+            <div className={styles.userInfo}>
+              <div className={styles.userName}>
                 {user.fullName}
               </div>
-              <div style={{ fontSize: "var(--font-sm)", color: "var(--color-subtext)" }}>
+              <div className={styles.userUsername}>
                 @{user.username}
               </div>
             </div>
-            <div style={{ marginLeft: "auto" }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "3px 12px",
-                  borderRadius: "var(--radius-full)",
-                  fontSize: "var(--font-xs)",
-                  fontWeight: 600,
-                  backgroundColor: isActive ? "var(--color-success-light)" : "var(--color-hover)",
-                  color: isActive ? "var(--color-success)" : "var(--color-subtext)",
-                }}
-              >
+            <div className={styles.statusContainer}>
+              <span className={`${styles.badge} ${isActive ? styles.active : styles.inactive}`}>
                 {isActive ? "Hoạt động" : "Ngừng hoạt động"}
               </span>
             </div>
           </div>
 
           {/* Chi tiết */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Email</span>
-              <span style={valueStyle}>{user.email || "—"}</span>
+          <div className={styles.detail}>
+            <div className={styles.detailRow}>
+              <span className={styles.detailKey}>Email</span>
+              <span className={styles.detailVal}>{user.email || "—"}</span>
             </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Số điện thoại</span>
-              <span style={valueStyle}>{user.phone || "—"}</span>
+            <div className={styles.detailRow}>
+              <span className={styles.detailKey}>Số điện thoại</span>
+              <span className={styles.detailVal}>{user.phone || "—"}</span>
             </div>
-            <div style={{ ...rowStyle, gridColumn: "1 / -1" }}>
-              <span style={labelStyle}>Quyền hạn (Vai trò)</span>
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+            <div className={`${styles.detailRow} ${styles.detailRowFullWidth}`}>
+              <span className={styles.detailKey}>Quyền hạn (Vai trò)</span>
+              <div className={styles.rolesContainer}>
                 {(user.roles ?? []).map((role) => (
-                  <span
-                    key={role}
-                    style={{
-                      padding: "2px 10px",
-                      borderRadius: "var(--radius-full)",
-                      fontSize: "var(--font-xs)",
-                      fontWeight: 600,
-                      backgroundColor: "var(--color-info-light, var(--color-hover))",
-                      color: "var(--color-primary)",
-                      border: "1px solid var(--color-border)",
-                    }}
-                  >
+                  <span key={role} className={styles.roleBadge}>
                     {ROLE_LABELS[role] ?? role}
                   </span>
                 ))}
               </div>
             </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Ngày tạo tài khoản</span>
-              <span style={valueStyle}>{formatDateTime(String(user.createdAt))}</span>
+            <div className={styles.detailRow}>
+              <span className={styles.detailKey}>Ngày tạo tài khoản</span>
+              <span className={styles.detailVal}>{formatDateTime(String(user.createdAt))}</span>
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+          <div className={styles.modalActions}>
             <Button variant="secondary" onClick={onClose}>
               Đóng
             </Button>
@@ -186,26 +145,4 @@ export function UserDetailModal({ userId, userName, onClose }: UserDetailModalPr
   );
 }
 
-const rowStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "2px",
-  padding: "8px 12px",
-  backgroundColor: "var(--color-bg)",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-};
 
-const labelStyle: React.CSSProperties = {
-  fontSize: "var(--font-xs)",
-  color: "var(--color-subtext)",
-  fontWeight: 500,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-};
-
-const valueStyle: React.CSSProperties = {
-  fontSize: "var(--font-sm)",
-  color: "var(--color-text)",
-  fontWeight: 500,
-};

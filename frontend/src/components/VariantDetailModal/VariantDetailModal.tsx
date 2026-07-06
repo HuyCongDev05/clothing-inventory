@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Modal } from "../Modal/Modal";
 import { Button } from "../Button/Button";
 import { getVariantById, type ProductVariantDetailResponseDto } from "../../services/product";
+import { getTransactionsByVariantId, type InventoryTransactionDto } from "../../services/inventoryTransaction";
+import { Pagination } from "../Pagination/Pagination";
+import styles from "./VariantDetailModal.module.css";
 
 interface VariantDetailModalProps {
   variantId: string | null;
@@ -28,20 +31,38 @@ function formatDateTime(dateStr?: string): string {
 }
 
 export function VariantDetailModal({ variantId, onClose }: VariantDetailModalProps) {
+  const [prevVariantId, setPrevVariantId] = useState<string | null>(null);
   const [variant, setVariant] = useState<ProductVariantDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // States for transaction history
+  const [activeTab, setActiveTab] = useState<"info" | "history">("info");
+  const [txHistory, setTxHistory] = useState<InventoryTransactionDto[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [txPage, setTxPage] = useState(1);
+  const [txTotalElements, setTxTotalElements] = useState(0);
+  const [txPageSize, setTxPageSize] = useState(10);
+
+  if (variantId !== prevVariantId) {
+    setPrevVariantId(variantId);
+    setVariant(null);
+    setError(null);
+    setLoading(!!variantId);
+
+    // Reset transaction states
+    setActiveTab("info");
+    setTxHistory([]);
+    setTxPage(1);
+    setTxTotalElements(0);
+  }
+
   useEffect(() => {
     if (!variantId) {
-      setVariant(null);
-      setError(null);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     getVariantById(variantId)
       .then((data) => {
@@ -59,10 +80,37 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
     };
   }, [variantId]);
 
+  const fetchTxHistory = async (targetPage: number) => {
+    if (!variantId) return;
+    try {
+      setTxLoading(true);
+      const result = await getTransactionsByVariantId(variantId, targetPage);
+      setTxHistory(result.items);
+      setTxTotalElements(result.totalElements);
+      setTxPageSize(result.pageSize);
+    } catch (err) {
+      console.error("Failed to fetch transaction history:", err);
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  const handleTabChange = (tab: "info" | "history") => {
+    setActiveTab(tab);
+    if (tab === "history" && txHistory.length === 0) {
+      fetchTxHistory(1);
+    }
+  };
+
+  const handlePageChange = (p: number) => {
+    setTxPage(p);
+    fetchTxHistory(p);
+  };
+
   const isActive = variant?.status?.toUpperCase() === "ACTIVE";
 
   return (
-    <Modal isOpen={!!variantId} onClose={onClose} title="Chi tiết phiên bản sản phẩm" size="lg">
+    <Modal isOpen={!!variantId} onClose={onClose} title="Chi tiết phiên bản sản phẩm" size="xl">
       {loading && (
         <div style={{ padding: "32px", textAlign: "center", color: "var(--color-subtext)" }}>
           <i className="fi fi-rr-spinner" style={{ marginRight: 8 }} />
@@ -79,109 +127,206 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
 
       {variant && !loading && (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "10px 20px",
-            }}
-          >
-            {/* Thông tin sản phẩm */}
-            <div style={rowStyle(true)}>
-              <span style={labelStyle}>Tên sản phẩm</span>
-              <span style={valueStyle}>{variant.productName}</span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Mã SKU</span>
-              <span style={valueStyle}>
-                <code style={{ fontFamily: "monospace", fontSize: "var(--font-sm)" }}>{variant.sku}</code>
-              </span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Mã sản phẩm</span>
-              <span style={valueStyle}>{variant.productCode}</span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Danh mục</span>
-              <span style={valueStyle}>{variant.categoryName || "—"}</span>
-            </div>
-
-            {variant.brand && (
-              <div style={rowStyle(false)}>
-                <span style={labelStyle}>Thương hiệu</span>
-                <span style={valueStyle}>{variant.brand}</span>
-              </div>
-            )}
-
-            {/* Thuộc tính biến thể */}
-            {variant.attributes && Object.keys(variant.attributes).length > 0 &&
-              Object.entries(variant.attributes).map(([attrName, attrValue]) => (
-                <div key={attrName} style={rowStyle(false)}>
-                  <span style={labelStyle}>{attrName}</span>
-                  <span style={valueStyle}>{attrValue || "—"}</span>
-                </div>
-              ))
-            }
-
-            {/* Giá & tồn kho */}
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Giá nhập</span>
-              <span style={valueStyle}>{formatCurrency(variant.purchasePrice)}</span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Giá bán</span>
-              <span style={valueStyle}>{formatCurrency(variant.salePrice)}</span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Tồn kho</span>
-              <span style={{ ...valueStyle, color: variant.quantityOnHand < 20 ? "var(--color-warning)" : "var(--color-text)" }}>
-                {variant.quantityOnHand} sản phẩm
-              </span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Trạng thái</span>
-              <span style={valueStyle}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "2px 10px",
-                    borderRadius: "var(--radius-full)",
-                    fontSize: "var(--font-xs)",
-                    fontWeight: 600,
-                    backgroundColor: isActive ? "var(--color-success-light)" : "var(--color-hover)",
-                    color: isActive ? "var(--color-success)" : "var(--color-subtext)",
-                  }}
-                >
-                  {isActive ? "Đang bán" : "Ngừng bán"}
-                </span>
-              </span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Ngày tạo</span>
-              <span style={valueStyle}>{formatDateTime(variant.createdAt)}</span>
-            </div>
-
-            <div style={rowStyle(false)}>
-              <span style={labelStyle}>Ngày cập nhật</span>
-              <span style={valueStyle}>{formatDateTime(variant.updatedAt)}</span>
-            </div>
-
-            {variant.description && (
-              <div style={rowStyle(true)}>
-                <span style={labelStyle}>Mô tả</span>
-                <span style={valueStyle}>{variant.description}</span>
-              </div>
-            )}
+          {/* Tab navigation */}
+          <div className={styles.tabNav}>
+            <button
+              className={[styles.tabBtn, activeTab === "info" ? styles.tabBtnActive : ""].join(" ")}
+              onClick={() => handleTabChange("info")}
+              type="button"
+            >
+              <i className="fi fi-rr-info" />
+              Thông tin
+            </button>
+            <button
+              className={[styles.tabBtn, activeTab === "history" ? styles.tabBtnActive : ""].join(" ")}
+              onClick={() => handleTabChange("history")}
+              type="button"
+            >
+              <i className="fi fi-rr-time-past" />
+              Lịch sử giao dịch
+            </button>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+          {/* Tab: Thông tin chung */}
+          {activeTab === "info" && (
+            <div className={styles.detail}>
+              {(() => {
+                const rowsList: { key: string; value: React.ReactNode; isFullWidth: boolean }[] = [
+                  { key: "Tên sản phẩm", value: variant.productName, isFullWidth: true },
+                  { key: "Mã SKU", value: <code style={{ fontFamily: "monospace", fontSize: "var(--font-sm)" }}>{variant.sku}</code>, isFullWidth: false },
+                  { key: "Mã sản phẩm", value: variant.productCode, isFullWidth: false },
+                  { key: "Danh mục", value: variant.categoryName || "—", isFullWidth: false },
+                ];
+
+                if (variant.brand) {
+                  rowsList.push({ key: "Thương hiệu", value: variant.brand, isFullWidth: false });
+                }
+
+                if (variant.attributes && Object.keys(variant.attributes).length > 0) {
+                  Object.entries(variant.attributes).forEach(([attrName, attrValue]) => {
+                    rowsList.push({
+                      key: attrName,
+                      value: attrValue || "—",
+                      isFullWidth: false,
+                    });
+                  });
+                }
+
+                rowsList.push(
+                  { key: "Giá nhập", value: formatCurrency(variant.purchasePrice), isFullWidth: false },
+                  { key: "Giá bán", value: formatCurrency(variant.salePrice), isFullWidth: false },
+                  {
+                    key: "Tồn kho",
+                    value: (
+                      <span style={{ color: variant.quantityOnHand < 20 ? "var(--color-warning)" : "var(--color-text)", fontWeight: 600 }}>
+                        {variant.quantityOnHand} sản phẩm
+                      </span>
+                    ),
+                    isFullWidth: false,
+                  },
+                  {
+                    key: "Trạng thái",
+                    value: (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "2px 10px",
+                          borderRadius: "var(--radius-full)",
+                          fontSize: "var(--font-xs)",
+                          fontWeight: 600,
+                          backgroundColor: isActive ? "var(--color-success-light)" : "var(--color-hover)",
+                          color: isActive ? "var(--color-success)" : "var(--color-subtext)",
+                        }}
+                      >
+                        {isActive ? "Đang bán" : "Ngừng bán"}
+                      </span>
+                    ),
+                    isFullWidth: false,
+                  },
+                  { key: "Ngày tạo", value: formatDateTime(variant.createdAt), isFullWidth: false },
+                  { key: "Ngày cập nhật", value: formatDateTime(variant.updatedAt), isFullWidth: false }
+                );
+
+                if (variant.description) {
+                  rowsList.push({ key: "Mô tả", value: variant.description, isFullWidth: true });
+                }
+
+                return rowsList.map(({ key, value, isFullWidth }) => (
+                  <div
+                    key={key}
+                    className={[
+                      styles.detailRow,
+                      isFullWidth ? styles.detailRowFullWidth : "",
+                    ].join(" ")}
+                  >
+                    <span className={styles.detailKey}>{key}</span>
+                    <span className={styles.detailVal}>{value}</span>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+
+          {/* Tab: Lịch sử giao dịch kho */}
+          {activeTab === "history" && (
+            <div>
+              {txLoading ? (
+                <div className={styles.txLoading}>
+                  <i className="fi fi-rr-spinner" style={{ marginRight: 8 }} />
+                  Đang tải lịch sử giao dịch...
+                </div>
+              ) : txHistory.length === 0 ? (
+                <div className={styles.txEmpty}>
+                  <i className="fi fi-rr-time-past" style={{ fontSize: 24, display: "block", marginBottom: 8, opacity: 0.4 }} />
+                  Chưa có giao dịch kho nào
+                </div>
+              ) : (
+                <div className={styles.txTableWrapper}>
+                  <table className={styles.txTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: "100px", textAlign: "center" }}>Loại thay đổi</th>
+                        <th style={{ width: "70px", textAlign: "center" }}>SL</th>
+                        <th style={{ width: "80px", textAlign: "center" }}>Trước</th>
+                        <th style={{ width: "80px", textAlign: "center" }}>Sau</th>
+                        <th>Ghi chú</th>
+                        <th style={{ width: "140px" }}>Người tạo</th>
+                        <th style={{ width: "140px" }}>Thời gian</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {txHistory.map((tx) => {
+                        const isIN = tx.transactionType === "IN";
+                        const isOUT = tx.transactionType === "OUT";
+                        const badgeClass = isIN
+                          ? styles.txBadgeIn
+                          : isOUT
+                            ? styles.txBadgeOut
+                            : tx.transactionType === "ADJUSTMENT"
+                              ? styles.txBadgeAdj
+                              : styles.txBadgeDefault;
+
+                        const txTypeLabel = isIN ? "Nhập kho" : isOUT ? "Xuất kho" : tx.transactionType === "ADJUSTMENT" ? "Điều chỉnh" : tx.transactionType;
+
+                        return (
+                          <tr key={tx.id}>
+                            <td>
+                              <span className={[styles.txBadge, badgeClass].join(" ")}>
+                                {txTypeLabel}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: "center" }}>
+                              <span className={isIN ? styles.txQtyIn : isOUT ? styles.txQtyOut : styles.txQtyAdj}>
+                                {isIN || tx.quantity > 0 ? "+" : ""}{tx.quantity}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: "center", color: "var(--color-subtext)" }}>
+                              {tx.quantityBefore}
+                            </td>
+                            <td style={{ textAlign: "center", fontWeight: 600 }}>
+                              {tx.quantityAfter}
+                            </td>
+                            <td>
+                              {isIN && tx.purchaseOrderCode ? (
+                                <span>
+                                  {tx.note?.replace(tx.purchaseOrderCode, "").trim().replace(/\s*$/, " ") || "Nhập theo đơn "}
+                                  <span style={{ color: "var(--color-primary)", fontWeight: 600, fontFamily: "monospace" }}>
+                                    {tx.purchaseOrderCode}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span style={{ color: "var(--color-subtext)" }}>
+                                  {tx.note || "—"}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ color: "var(--color-subtext)" }}>
+                              {tx.createdByName || String(tx.createdBy)}
+                            </td>
+                            <td style={{ color: "var(--color-subtext)", whiteSpace: "nowrap" }}>
+                              {formatDateTime(tx.createdAt)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Phân trang cho bảng transaction */}
+              {txTotalElements > txPageSize && (
+                <div className={styles.txPaginationWrap}>
+                  <Pagination
+                    pagination={{ page: txPage, pageSize: txPageSize, total: txTotalElements }}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className={styles.modalActions}>
             <Button variant="secondary" onClick={onClose}>
               Đóng
             </Button>
@@ -191,30 +336,3 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
     </Modal>
   );
 }
-
-function rowStyle(fullWidth: boolean): React.CSSProperties {
-  return {
-    gridColumn: fullWidth ? "1 / -1" : undefined,
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    padding: "8px 12px",
-    backgroundColor: "var(--color-bg)",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid var(--color-border)",
-  };
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "var(--font-xs)",
-  color: "var(--color-subtext)",
-  fontWeight: 500,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-};
-
-const valueStyle: React.CSSProperties = {
-  fontSize: "var(--font-sm)",
-  color: "var(--color-text)",
-  fontWeight: 500,
-};

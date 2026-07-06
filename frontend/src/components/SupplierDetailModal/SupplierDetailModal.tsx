@@ -3,6 +3,7 @@ import { Modal } from "../Modal/Modal";
 import { Button } from "../Button/Button";
 import { getSupplierById } from "../../services/supplier";
 import type { Supplier } from "../../types/supplier.types";
+import styles from "./SupplierDetailModal.module.css";
 
 interface SupplierDetailModalProps {
   supplierId: string | null;
@@ -30,20 +31,24 @@ function formatDateTime(dateStr?: string): string {
 }
 
 export function SupplierDetailModal({ supplierId, onClose }: SupplierDetailModalProps) {
+  const [prevSupplierId, setPrevSupplierId] = useState<string | null>(null);
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  if (supplierId !== prevSupplierId) {
+    setPrevSupplierId(supplierId);
+    setSupplier(null);
+    setError(null);
+    setLoading(!!supplierId);
+  }
+
   useEffect(() => {
     if (!supplierId) {
-      setSupplier(null);
-      setError(null);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     getSupplierById(supplierId)
       .then((data) => {
@@ -96,56 +101,23 @@ export function SupplierDetailModal({ supplierId, onClose }: SupplierDetailModal
 
       {supplier && !loading && (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "10px 20px",
-            }}
-          >
+          <div className={styles.detail}>
             {rows.map(({ key, value, fullWidth, isStatus }) => (
               <div
                 key={key}
-                style={{
-                  gridColumn: fullWidth ? "1 / -1" : undefined,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "2px",
-                  padding: "8px 12px",
-                  backgroundColor: "var(--color-bg)",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                }}
+                className={[
+                  styles.detailRow,
+                  fullWidth ? styles.detailRowFullWidth : "",
+                ].join(" ")}
               >
-                <span
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    color: "var(--color-subtext)",
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  {key}
-                </span>
-                <span style={{ fontSize: "var(--font-sm)", color: "var(--color-text)", fontWeight: 500 }}>
+                <span className={styles.detailKey}>{key}</span>
+                <span className={styles.detailVal}>
                   {isStatus ? (
                     <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 10px",
-                        borderRadius: "var(--radius-full)",
-                        fontSize: "var(--font-xs)",
-                        fontWeight: 600,
-                        backgroundColor:
-                          supplier.status === "active"
-                            ? "var(--color-success-light)"
-                            : "var(--color-hover)",
-                        color:
-                          supplier.status === "active"
-                            ? "var(--color-success)"
-                            : "var(--color-subtext)",
-                      }}
+                      className={[
+                        styles.badge,
+                        supplier.status === "active" ? styles.active : styles.inactive,
+                      ].join(" ")}
                     >
                       {value}
                     </span>
@@ -157,7 +129,7 @@ export function SupplierDetailModal({ supplierId, onClose }: SupplierDetailModal
             ))}
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+          <div className={styles.modalActions}>
             <Button variant="secondary" onClick={onClose}>
               Đóng
             </Button>
