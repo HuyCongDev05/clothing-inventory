@@ -85,6 +85,12 @@ public class ProductController {
     }
 
     @PreAuthorize("hasAuthority('warehouse-staff')")
+    @GetMapping("/variants/{id}")
+    public ResponseEntity<ProductVariantDetailResponseDto> getVariantById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getVariantById(id));
+    }
+
+    @PreAuthorize("hasAuthority('warehouse-staff')")
     @PutMapping("/variants/{id}")
     public ResponseEntity<ProductResponseDto> updateVariant(@PathVariable Long id, @Valid @RequestBody VariantUpdateRequestDto request) {
         ProductResponseDto updatedProduct = productService.updateVariant(id, request);

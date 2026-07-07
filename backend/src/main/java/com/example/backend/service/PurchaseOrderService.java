@@ -49,7 +49,7 @@ public class PurchaseOrderService {
         Specification<PurchaseOrder> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            predicates.add(criteriaBuilder.notEqual(root.get("status"), PurchaseOrderStatus.CANCELLED));
+//            predicates.add(criteriaBuilder.notEqual(root.get("status"), PurchaseOrderStatus.CANCELLED));
 
             if (StringUtils.hasText(keyword)) {
                 String keywordLower = "%" + keyword.toLowerCase() + "%";

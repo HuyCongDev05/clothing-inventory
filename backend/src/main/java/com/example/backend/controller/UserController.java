@@ -42,6 +42,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers(keyword, status, pageable));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
+
     @PatchMapping("/{uuid}")
     @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<UserResponseDto> updateUser(

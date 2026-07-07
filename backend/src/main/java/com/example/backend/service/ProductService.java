@@ -120,6 +120,12 @@ public class ProductService {
         return PageResponseDto.from(variantPage.map(variantMapper::toDetailResponse));
     }
 
+    public ProductVariantDetailResponseDto getVariantById(Long id) {
+        ProductVariant variant = variantRepository.findById(id)
+                .orElseThrow(() -> new InvalidException(ErrorCode.PRODUCT_NOT_FOUND));
+        return variantMapper.toDetailResponse(variant);
+    }
+
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request) {
         Category category = null;

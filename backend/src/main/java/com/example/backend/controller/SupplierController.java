@@ -40,6 +40,11 @@ public class SupplierController {
         return ResponseEntity.ok(supplierService.getAllSuppliers(keyword, status, pageable));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SupplierResponseDto> getSupplierById(@PathVariable Long id) {
+        return ResponseEntity.ok(supplierService.getSupplierById(id));
+    }
+
     @PreAuthorize("hasAuthority('store-keeper')")
     @PostMapping
     public ResponseEntity<SupplierResponseDto> createSupplier(@Valid @RequestBody SupplierRequestDto request) {
