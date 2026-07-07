@@ -150,6 +150,7 @@ export interface UserUpdateRequest {
   phone?: string;
   email?: string;
   status?: "ACTIVE" | "INACTIVE" | "DELETED";
+  password?: string;
 }
 
 // Lấy danh sách tài khoản phân trang (chỉ admin)
@@ -201,6 +202,7 @@ export async function updateUser(
       phone: payload.phone,
       email: payload.email,
       status: payload.status,
+      password: payload.password,
     }),
   });
   return response.data;

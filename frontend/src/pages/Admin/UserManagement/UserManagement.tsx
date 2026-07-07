@@ -11,6 +11,7 @@ import { Modal } from "../../../components/Modal/Modal";
 import { Pagination } from "../../../components/Pagination/Pagination";
 import styles from "./UserManagement.module.css";
 import type { TableColumn } from "../../../types/common.types";
+import { isPhone } from "../../../utils/validators";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Quản trị viên",
@@ -84,6 +85,7 @@ export function UserManagement() {
     phone: "",
     status: "ACTIVE" as "ACTIVE" | "INACTIVE" | "DELETED",
     authorities: [] as string[],
+    password: "",
   });
 
   // Debounce tìm kiếm tài khoản
@@ -166,6 +168,10 @@ export function UserManagement() {
       showToast("Mật khẩu phải lớn hơn 6 ký tự!", "warning");
       return;
     }
+    if (createForm.phone && isPhone(createForm.phone)) {
+      showToast("Số điện thoại không hợp lệ!", "warning");
+      return;
+    }
     if (createForm.authorities.length === 0) {
       showToast("Vui lòng chọn ít nhất một vai trò!", "warning");
       return;
@@ -199,6 +205,7 @@ export function UserManagement() {
       phone: u.phone || "",
       status: u.status,
       authorities: u.roles,
+      password: "",
     });
     setIsEditOpen(true);
   };
@@ -210,8 +217,16 @@ export function UserManagement() {
       showToast("Vui lòng điền đầy đủ các trường bắt buộc!", "warning");
       return;
     }
+    if (editForm.password && editForm.password.length <= 6) {
+      showToast("Mật khẩu phải lớn hơn 6 ký tự!", "warning");
+      return;
+    }
     if (selectedUser.roles.includes("admin") && editForm.status === "INACTIVE") {
       showToast("Không thể khóa tài khoản Admin!", "error");
+      return;
+    }
+    if (editForm.phone && isPhone(editForm.phone)) {
+      showToast("Số điện thoại không hợp lệ!", "warning");
       return;
     }
     if (editForm.authorities.length === 0) {
@@ -225,6 +240,7 @@ export function UserManagement() {
         phone: editForm.phone.trim(),
         email: editForm.email.trim(),
         status: editForm.status,
+        password: editForm.password ? editForm.password : undefined,
       });
       await updateUserRoles(selectedUser.uuid, editForm.authorities);
       setIsEditOpen(false);
@@ -500,6 +516,17 @@ export function UserManagement() {
               ]}
               value={editForm.status}
               onChange={(e) => setEditForm({ ...editForm, status: e.target.value as "ACTIVE" | "INACTIVE" })}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <Input
+              id="edit-password"
+              label="Mật khẩu mới (Để trống nếu không muốn đổi)"
+              type="password"
+              value={editForm.password}
+              onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+              placeholder="Nhập mật khẩu mới"
+              autoComplete="new-password"
             />
           </div>
           <div className={styles.formGroup}>

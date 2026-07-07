@@ -55,7 +55,7 @@ public class AuthService {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         User user = userRepository.findByUsername(login.getUsername()).orElseThrow(() -> new InvalidException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        if (user.getStatus() == Status.INACTIVE) throw new InvalidException(ErrorCode.INACTIVE);
+        if (user.getStatus() == Status.INACTIVE) throw new InvalidException(ErrorCode.ACCOUNT_INACTIVE);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String accessToken = jwtUtil.generateAccessToken(user.getUuid(), authentication);
         String refreshToken = jwtUtil.generateRefreshToken(user.getUuid(), authentication);
@@ -111,7 +111,7 @@ public class AuthService {
         }
         String uuid = jwt.getSubject();
         User user = userRepository.findByUuid(uuid).orElseThrow(() -> new InvalidException(ErrorCode.ACCOUNT_NOT_FOUND));
-        if (user.getStatus() == Status.INACTIVE) throw new InvalidException(ErrorCode.INACTIVE);
+        if (user.getStatus() == Status.INACTIVE) throw new InvalidException(ErrorCode.ACCOUNT_INACTIVE);
         UserDetails userDetails = userDetailService.loadUserByUsername(user.getUsername());
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         AuthResponseDto.RefreshToken accessToken = new AuthResponseDto.RefreshToken();

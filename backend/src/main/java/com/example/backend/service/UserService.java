@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,6 +37,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public PageResponseDto<UserResponseDto> getAllUsers(String keyword, Status status, Pageable pageable) {
         Specification<User> spec = (root, query, criteriaBuilder) -> {
@@ -90,6 +92,10 @@ public class UserService {
 
         if (StringUtils.hasText(request.getFullName())) {
             user.setFullName(request.getFullName());
+        }
+
+        if (StringUtils.hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
         if (request.getStatus() != null) {

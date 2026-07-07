@@ -8,7 +8,7 @@ export function isEmail(value: string): string | null {
 }
 
 export function isPhone(value: string): string | null {
-  const re = /^(0|\+84)[0-9]{9}$/;
+  const re = /^\+?[0-9]{7,15}$/;
   return re.test(value.replace(/\s/g, ""))
     ? null
     : "Số điện thoại không hợp lệ";

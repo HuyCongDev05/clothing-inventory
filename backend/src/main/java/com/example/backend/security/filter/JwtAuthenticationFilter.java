@@ -1,7 +1,10 @@
 package com.example.backend.security.filter;
 
 import com.example.backend.exception.ErrorCode;
+import com.example.backend.model.User;
+import com.example.backend.model.enums.Status;
 import com.example.backend.security.exception.FilterExceptionHandler;
+import com.example.backend.service.UserService;
 import com.example.backend.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final FilterExceptionHandler filterExceptionHandler;
+    private final UserService userService;
 
 
     @Override
@@ -45,12 +49,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
             if (uuid != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                UserDetails userDetails = userDetailsService.loadUserByUsername(uuid);
+                User user = userService.findByUuid(uuid);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
 
                 if (jwtUtil.isTokenValid(token, userDetails)) {
                     if (!"access_token".equals(jwt.getClaim("type").toString())) {
                         filterExceptionHandler.writeError(response, ErrorCode.UNAUTHORIZED_ACCESS.getStatus(), ErrorCode.UNAUTHORIZED_ACCESS.getMessage());
+                        return;
+                    }
+                    if (Status.INACTIVE == user.getStatus()) {
+                        filterExceptionHandler.writeError(response, ErrorCode.ACCOUNT_INACTIVE.getStatus(), ErrorCode.ACCOUNT_INACTIVE.getMessage());
                         return;
                     }
                     UsernamePasswordAuthenticationToken authentication =

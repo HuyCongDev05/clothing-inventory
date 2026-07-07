@@ -7,7 +7,7 @@ public enum ErrorCode {
     TOKEN_SUBJECT_MISMATCH(401, "Invalid token signature"),
     UNAUTHORIZED_ACCESS(401, "Unauthorized access"),
     FORBIDDEN_ACCESS(403, "Forbidden access"),
-    INACTIVE(400, "Account is inactive"),
+    ACCOUNT_INACTIVE(400, "Account is inactive"),
     ACCOUNT_NOT_FOUND(404, "Account not found"),
     ROLE_NOT_FOUND(404, "Role not found"),
     SUPPLIER_NOT_FOUND(404, "Supplier not found"),

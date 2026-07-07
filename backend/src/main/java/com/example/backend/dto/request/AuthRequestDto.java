@@ -1,9 +1,6 @@
 package com.example.backend.dto.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,6 +27,10 @@ public class AuthRequestDto {
         private String fullName;
 
         @Size(max = 20, message = "Phone number cannot exceed 20 characters")
+        @Pattern(
+                regexp = "^\\+?[0-9]{7,15}$",
+                message = "Invalid phone number."
+        )
         private String phone;
 
         @Email(message = "Invalid email format")
