@@ -127,4 +127,10 @@ public class UserService {
         return userRepository.findByUuid(uuid)
                 .orElseThrow(() -> new InvalidException(ErrorCode.ACCOUNT_NOT_FOUND));
     }
+
+    public UserResponseDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new InvalidException(ErrorCode.ACCOUNT_NOT_FOUND));
+        return userMapper.toResponse(user);
+    }
 }

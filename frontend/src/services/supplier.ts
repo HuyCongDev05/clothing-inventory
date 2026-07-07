@@ -78,6 +78,11 @@ export async function getSuppliersPage(
   };
 }
 
+export async function getSupplierById(id: string): Promise<Supplier> {
+  const response = await apiFetch<ApiResponse<BackendSupplierResponse>>(`/suppliers/${id}`);
+  return mapBackendSupplierToFrontend(response.data);
+}
+
 export async function createSupplier(
   form: SupplierFormData,
 ): Promise<Supplier> {

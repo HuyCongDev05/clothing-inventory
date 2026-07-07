@@ -798,3 +798,20 @@
   align-items: center;
   gap: 5px;
 }
+
+/* Link bấm vào text thường */
+.clickableLink {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  transition: color var(--transition), opacity var(--transition);
+}
+
+.clickableLink:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}

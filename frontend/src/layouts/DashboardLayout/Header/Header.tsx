@@ -2,9 +2,11 @@ import { useLocation } from "react-router-dom";
 import styles from "./Header.module.css";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Dashboard",
+  "/": "Tổng quan",
+  "/admin/users": "Quản lý tài khoản",
   "/coordinator/suppliers": "Nhà cung cấp",
-  "/coordinator/warehouse-receipt": "Lập phiếu nhập kho",
+  "/coordinator/purchase-order": "Đơn đặt hàng",
+  "/coordinator/warehouse-receipt": "Phiếu nhập kho",
   "/coordinator/payment": "Thanh toán nhà cung cấp",
   "/warehouse/products": "Danh sách sản phẩm",
   "/warehouse/products/create": "Tạo sản phẩm mới",
