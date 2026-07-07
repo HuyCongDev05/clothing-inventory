@@ -3,6 +3,7 @@ package com.example.backend.dto.request;
 import com.example.backend.model.enums.Status;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +20,10 @@ public class SupplierRequestDto {
     private String contactPerson;
 
     @Size(max = 20, message = "Phone number cannot exceed 20 characters")
+    @Pattern(
+            regexp = "^\\+?[0-9]{7,15}$",
+            message = "Invalid phone number."
+    )
     private String phone;
 
     @Email(message = "Invalid email format")
