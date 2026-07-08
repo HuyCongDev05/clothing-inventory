@@ -1,7 +1,6 @@
 // Đồng bộ với enum PurchaseOrderStatus (backend)
 export type PurchaseOrderStatus = "DRAFT" | "PENDING" | "RECEIVED" | "CANCELLED";
 
-
 // Đồng bộ với enum PurchaseOrderPaymentStatus (backend)
 export type PurchaseOrderPaymentStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID";
 

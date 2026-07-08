@@ -467,7 +467,7 @@
 }
 
 
-/* ===== Bộ lọc thời gian ===== */
+
 
 .filterBar {
   display: flex;
@@ -547,7 +547,7 @@
   opacity: 0.88;
 }
 
-/* Clickable info links trong các bảng chi tiết */
+
 .clickableLink {
   color: var(--color-primary);
   cursor: pointer;
@@ -564,4 +564,4 @@
   opacity: 0.75;
   text-decoration: underline;
 }
-
+

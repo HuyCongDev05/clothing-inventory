@@ -10,6 +10,7 @@ interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
 }
 
+// Thành phần cửa sổ Modal
 export function Modal({
   isOpen,
   onClose,

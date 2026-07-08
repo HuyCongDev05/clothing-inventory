@@ -11,10 +11,12 @@ interface VariantDetailModalProps {
   onClose: () => void;
 }
 
+// Định dạng tiền tệ
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
 }
 
+// Định dạng ngày giờ
 function formatDateTime(dateStr?: string): string {
   if (!dateStr) return "—";
   try {
@@ -30,13 +32,14 @@ function formatDateTime(dateStr?: string): string {
   }
 }
 
+// Thành phần hiển thị chi tiết biến thể
 export function VariantDetailModal({ variantId, onClose }: VariantDetailModalProps) {
   const [prevVariantId, setPrevVariantId] = useState<string | null>(null);
   const [variant, setVariant] = useState<ProductVariantDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // States for transaction history
+  // Các trạng thái lịch sử giao dịch
   const [activeTab, setActiveTab] = useState<"info" | "history">("info");
   const [txHistory, setTxHistory] = useState<InventoryTransactionDto[]>([]);
   const [txLoading, setTxLoading] = useState(false);
@@ -50,7 +53,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
     setError(null);
     setLoading(!!variantId);
 
-    // Reset transaction states
+    // Đặt lại các trạng thái giao dịch
     setActiveTab("info");
     setTxHistory([]);
     setTxPage(1);
@@ -80,6 +83,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
     };
   }, [variantId]);
 
+  // Hàm fetchTxHistory
   const fetchTxHistory = async (targetPage: number) => {
     if (!variantId) return;
     try {
@@ -95,6 +99,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
     }
   };
 
+  // Xử lý tab change
   const handleTabChange = (tab: "info" | "history") => {
     setActiveTab(tab);
     if (tab === "history" && txHistory.length === 0) {
@@ -102,6 +107,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
     }
   };
 
+  // Xử lý page change
   const handlePageChange = (p: number) => {
     setTxPage(p);
     fetchTxHistory(p);
@@ -127,7 +133,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
 
       {variant && !loading && (
         <>
-          {/* Tab navigation */}
+          
           <div className={styles.tabNav}>
             <button
               className={[styles.tabBtn, activeTab === "info" ? styles.tabBtnActive : ""].join(" ")}
@@ -147,7 +153,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
             </button>
           </div>
 
-          {/* Tab: Thông tin chung */}
+          
           {activeTab === "info" && (
             <div className={styles.detail}>
               {(() => {
@@ -227,7 +233,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
             </div>
           )}
 
-          {/* Tab: Lịch sử giao dịch kho */}
+          
           {activeTab === "history" && (
             <div>
               {txLoading ? (
@@ -314,7 +320,7 @@ export function VariantDetailModal({ variantId, onClose }: VariantDetailModalPro
                 </div>
               )}
 
-              {/* Phân trang cho bảng transaction */}
+              
               {txTotalElements > txPageSize && (
                 <div className={styles.txPaginationWrap}>
                   <Pagination

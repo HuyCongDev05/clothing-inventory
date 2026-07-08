@@ -5,8 +5,6 @@ import type {
   PurchaseOrderStatus,
 } from "../types/purchaseOrder.types";
 
-
-
 // Chi tiết đơn đặt hàng từ backend
 export interface BackendPurchaseOrderDetailResponse {
   id: number;
@@ -78,8 +76,7 @@ export interface PurchaseOrderStatusUpdateDto {
   status: PurchaseOrderStatus;
 }
 
-
-
+// Hàm mapBackendOrderToFrontend
 export function mapBackendOrderToFrontend(
   o: BackendPurchaseOrderResponse,
 ): PurchaseOrder {
@@ -115,8 +112,6 @@ export function mapBackendOrderToFrontend(
   };
 }
 
-
-
 // Lấy danh sách đơn đặt hàng phân trang
 export async function getPurchaseOrdersPage(
   page: number,
@@ -126,6 +121,7 @@ export async function getPurchaseOrdersPage(
   sortDir?: "asc" | "desc",
   fromDate?: string,
   toDate?: string,
+  supplierId?: number | string,
 ): Promise<PaginatedPurchaseOrders> {
   const params = new URLSearchParams({ page: String(page) });
   if (keyword) params.set("keyword", keyword);
@@ -134,6 +130,7 @@ export async function getPurchaseOrdersPage(
   if (sortDir) params.set("sortDirection", sortDir);
   if (fromDate) params.set("fromDate", fromDate);
   if (toDate) params.set("toDate", toDate);
+  if (supplierId) params.set("supplierId", String(supplierId));
   const url = `/purchase-orders?${params.toString()}`;
 
   const response = await apiFetch<ApiResponse<PaginatedPurchaseOrdersResponse>>(url);
@@ -156,6 +153,7 @@ export async function getReceivedPurchaseOrdersPage(
   sortDir?: "asc" | "desc",
   fromDate?: string,
   toDate?: string,
+  supplierId?: number | string,
 ): Promise<PaginatedPurchaseOrders> {
   const params = new URLSearchParams({ page: String(page) });
   if (keyword) params.set("keyword", keyword);
@@ -163,6 +161,7 @@ export async function getReceivedPurchaseOrdersPage(
   if (sortDir) params.set("sortDirection", sortDir);
   if (fromDate) params.set("fromDate", fromDate);
   if (toDate)   params.set("toDate", toDate);
+  if (supplierId) params.set("supplierId", String(supplierId));
   const url = `/purchase-orders/received?${params.toString()}`;
 
   const response = await apiFetch<ApiResponse<PaginatedPurchaseOrdersResponse>>(url);
@@ -176,7 +175,6 @@ export async function getReceivedPurchaseOrdersPage(
     totalPages: data.totalPages,
   };
 }
-
 
 // Lấy chi tiết đơn đặt hàng theo ID
 export async function getPurchaseOrderById(
@@ -203,7 +201,7 @@ export async function updatePurchaseOrder(
   return mapBackendOrderToFrontend(response.data);
 }
 
-
+// Tạo mới purchase order
 export async function createPurchaseOrder(
   payload: PurchaseOrderCreateRequestDto,
 ): Promise<PurchaseOrder> {

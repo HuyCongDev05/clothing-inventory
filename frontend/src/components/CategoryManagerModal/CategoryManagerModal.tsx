@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { Modal } from "../Modal/Modal";
 import { Button } from "../Button/Button";
 import { useToast } from "../Toast/ToastContext";
+import { ConfirmDialog } from "../ConfirmDialog/ConfirmDialog";
 import {
   getCategories,
   createCategory,
   updateCategory,
   deleteCategory,
+  restoreCategory,
   type CategoryResponseDto,
 } from "../../services/product";
 import styles from "./CategoryManagerModal.module.css";
@@ -17,6 +19,7 @@ interface CategoryManagerModalProps {
   onCategoriesChanged: (categories: CategoryResponseDto[]) => void;
 }
 
+// Thành phần CategoryManagerModal
 export function CategoryManagerModal({
   isOpen,
   onClose,
@@ -37,27 +40,63 @@ export function CategoryManagerModal({
   const [editingName, setEditingName] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
-  // Trạng thái xóa
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+
+  // Trạng thái khôi phục danh mục đã xóa
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [restoreName, setRestoreName] = useState("");
+
+  // Khôi phục danh mục đã bị xóa trước đó
+  const handleRestore = async () => {
+    if (!restoreName) return;
+    try {
+      const restored = await restoreCategory(restoreName);
+      const updated = [...categories, restored];
+      setCategories(updated);
+      onCategoriesChanged(updated);
+      setNewName("");
+      showToast(`Đã khôi phục danh mục "${restored.name}" thành công!`, "success");
+    } catch {
+      showToast("Khôi phục danh mục thất bại. Vui lòng thử lại!", "error");
+    } finally {
+      setShowRestoreConfirm(false);
+      setRestoreName("");
+    }
+  };
 
   // Load danh mục khi mở modal
   useEffect(() => {
     if (!isOpen) return;
-    setLoading(true);
+
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) setLoading(true);
+    });
+
     getCategories()
       .then((data) => {
-        setCategories(data);
+        if (active) {
+          setCategories(data);
+          setLoading(false);
+        }
       })
-      .catch(() => showToast("Không thể tải danh mục", "error"))
-      .finally(() => setLoading(false));
-  }, [isOpen]);
+      .catch(() => {
+        if (active) {
+          showToast("Không thể tải danh mục", "error");
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isOpen, showToast]);
 
   // Reset khi đóng
   const handleClose = () => {
     setNewName("");
     setEditingId(null);
     setEditingName("");
-    setDeletingId(null);
     onClose();
   };
 
@@ -78,13 +117,20 @@ export function CategoryManagerModal({
       setNewName("");
       showToast(`Đã thêm danh mục "${created.name}"`, "success");
       newInputRef.current?.focus();
-    } catch {
-      showToast("Thêm danh mục thất bại. Vui lòng thử lại!", "error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "Category name already exists") {
+        setRestoreName(trimmed);
+        setShowRestoreConfirm(true);
+      } else {
+        showToast("Thêm danh mục thất bại. Vui lòng thử lại!", "error");
+      }
     } finally {
       setAddLoading(false);
     }
   };
 
+  // Xử lý phím nhấn (Enter) khi thêm danh mục mới
   const handleNewKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleAdd();
   };
@@ -93,9 +139,9 @@ export function CategoryManagerModal({
   const startEdit = (cat: CategoryResponseDto) => {
     setEditingId(cat.id);
     setEditingName(cat.name);
-    setDeletingId(null);
   };
 
+  // Hủy bỏ chế độ chỉnh sửa danh mục
   const cancelEdit = () => {
     setEditingId(null);
     setEditingName("");
@@ -108,25 +154,35 @@ export function CategoryManagerModal({
       showToast("Tên danh mục không được để trống", "error");
       return;
     }
-    // Lấy code hiện tại của category đang sửa
-    const existingCategory = categories.find((c) => c.id === id);
-    if (!existingCategory) return;
+
+    const original = categories.find((c) => c.id === id);
+    if (original && original.name === trimmed) {
+      setEditingId(null);
+      setEditingName("");
+      return;
+    }
 
     setEditLoading(true);
     try {
-      const updated = await updateCategory(id, trimmed, existingCategory.code);
+      const updated = await updateCategory(id, trimmed);
       const newList = categories.map((c) => (c.id === id ? updated : c));
       setCategories(newList);
       onCategoriesChanged(newList);
       setEditingId(null);
       showToast(`Đã cập nhật danh mục "${updated.name}"`, "success");
-    } catch {
-      showToast("Cập nhật danh mục thất bại. Vui lòng thử lại!", "error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "Category name already exists") {
+        showToast("Danh mục đã tồn tại trong hệ thống!", "error");
+      } else {
+        showToast("Cập nhật danh mục thất bại. Vui lòng thử lại!", "error");
+      }
     } finally {
       setEditLoading(false);
     }
   };
 
+  // Xử lý phím nhấn (Enter/Escape) khi đang sửa danh mục
   const handleEditKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     id: number
@@ -135,23 +191,15 @@ export function CategoryManagerModal({
     if (e.key === "Escape") cancelEdit();
   };
 
-  // Xóa
+  // Xử lý xóa danh mục
   const handleDelete = async (id: number, name: string) => {
-    if (deletingId !== id) {
-      setDeletingId(id);
-      setEditingId(null);
-      return;
-    }
-    // Click lần 2 → xác nhận xóa
     try {
       await deleteCategory(id);
       const newList = categories.filter((c) => c.id !== id);
       setCategories(newList);
       onCategoriesChanged(newList);
-      setDeletingId(null);
       showToast(`Đã xóa danh mục "${name}"`, "success");
     } catch (err: unknown) {
-      setDeletingId(null);
       // Backend trả 409 nếu còn sản phẩm đang dùng danh mục này
       const msg =
         err instanceof Error && err.message.includes("409")
@@ -164,7 +212,7 @@ export function CategoryManagerModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Quản lý danh mục" size="md">
       <div className={styles.wrapper}>
-        {/* Form thêm mới */}
+        
         <div className={styles.addRow}>
           <input
             ref={newInputRef}
@@ -188,7 +236,7 @@ export function CategoryManagerModal({
           </Button>
         </div>
 
-        {/* Danh sách */}
+        
         <div className={styles.listWrapper}>
           {loading ? (
             <div className={styles.emptyState}>
@@ -205,7 +253,7 @@ export function CategoryManagerModal({
               {categories.map((cat) => (
                 <li key={cat.id} className={styles.item}>
                   {editingId === cat.id ? (
-                    /* Chế độ sửa */
+                    
                     <div className={styles.editRow}>
                       <input
                         className={styles.editInput}
@@ -239,12 +287,11 @@ export function CategoryManagerModal({
                       </div>
                     </div>
                   ) : (
-                    /* Chế độ xem */
+                    
                     <div className={styles.viewRow}>
                       <div className={styles.catInfo}>
                         <i className="fi fi-rr-tag" />
                         <span className={styles.catName}>{cat.name}</span>
-                        <span className={styles.catCode}>{cat.code}</span>
                       </div>
                       <div className={styles.viewActions}>
                         <button
@@ -256,36 +303,15 @@ export function CategoryManagerModal({
                           <i className="fi fi-rr-edit" />
                         </button>
                         <button
-                          className={`${styles.iconBtn} ${
-                            deletingId === cat.id
-                              ? styles.iconBtnDangerConfirm
-                              : styles.iconBtnDanger
-                          }`}
+                          className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
                           onClick={() => handleDelete(cat.id, cat.name)}
-                          title={
-                            deletingId === cat.id
-                              ? "Nhấn lần nữa để xác nhận xóa"
-                              : "Xóa danh mục"
-                          }
+                          title="Xóa danh mục"
                           type="button"
                         >
-                          <i
-                            className={
-                              deletingId === cat.id
-                                ? "fi fi-rr-exclamation"
-                                : "fi fi-rr-trash"
-                            }
-                          />
+                          <i className="fi fi-rr-trash" />
                         </button>
                       </div>
                     </div>
-                  )}
-
-                  {/* Cảnh báo xóa */}
-                  {deletingId === cat.id && (
-                    <p className={styles.deleteWarning}>
-                      ⚠️ Nhấn nút xóa lần nữa để xác nhận. Nếu danh mục &ldquo;{cat.name}&rdquo; đang có sản phẩm, hệ thống sẽ từ chối xóa.
-                    </p>
                   )}
                 </li>
               ))}
@@ -293,7 +319,7 @@ export function CategoryManagerModal({
           )}
         </div>
 
-        {/* Footer */}
+        
         <div className={styles.footer}>
           <span className={styles.count}>
             {categories.length} danh mục
@@ -303,6 +329,18 @@ export function CategoryManagerModal({
           </Button>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={showRestoreConfirm}
+        title="Khôi phục danh mục?"
+        message={`Danh mục "${restoreName}" đã từng bị xóa trước đó. Bạn có muốn khôi phục lại danh mục này không?`}
+        confirmLabel="Khôi phục"
+        cancelLabel="Hủy"
+        onConfirm={handleRestore}
+        onCancel={() => {
+          setShowRestoreConfirm(false);
+          setRestoreName("");
+        }}
+      />
     </Modal>
   );
 }

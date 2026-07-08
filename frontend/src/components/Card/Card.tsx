@@ -12,12 +12,14 @@ interface CardHeaderProps {
   actions?: ReactNode;
 }
 
+// Thành phần thẻ
 export function Card({ children, className }: CardProps) {
   return (
     <div className={[styles.card, className ?? ""].join(" ")}>{children}</div>
   );
 }
 
+// Thành phần tiêu đề thẻ
 export function CardHeader({ title, subtitle, actions }: CardHeaderProps) {
   return (
     <div className={styles.cardHeader}>
@@ -30,6 +32,7 @@ export function CardHeader({ title, subtitle, actions }: CardHeaderProps) {
   );
 }
 
+// Thành phần thân thẻ
 export function CardBody({ children, className }: CardProps) {
   return (
     <div className={[styles.cardBody, className ?? ""].join(" ")}>

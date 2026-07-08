@@ -22,6 +22,7 @@ interface WarehouseContextValue {
 
 const WarehouseContext = createContext<WarehouseContextValue | null>(null);
 
+// Thành phần WarehouseContextProvider
 export function WarehouseContextProvider({ children }: { children: ReactNode }) {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 

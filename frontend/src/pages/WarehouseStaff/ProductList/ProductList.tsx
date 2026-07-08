@@ -26,6 +26,7 @@ import { getTransactionsByVariantId, type InventoryTransactionDto } from "../../
 import type { PurchaseOrder } from "../../../types/purchaseOrder.types";
 import styles from "./ProductList.module.css";
 
+// Trang quản lý danh sách sản phẩm
 export function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -185,6 +186,8 @@ export function ProductList() {
   }, [searchQuery]);
 
   useEffect(() => {
+
+    // Hàm fetchProducts
     const fetchProducts = async () => {
       try {
         setLoading(true);
@@ -210,6 +213,7 @@ export function ProductList() {
     fetchProducts();
   }, [currentPage, refreshTrigger, showToast, debouncedQuery, sortBy, sortDir, statusFilter]);
 
+  // Xử lý sort
   const handleSort = (field: "name" | "brand" | "createdAt" | "updatedAt") => {
     console.log("[ProductList Sort] Clicked:", field, "Current state:", { sortBy, sortDir });
     if (sortBy === field) {
@@ -255,11 +259,13 @@ export function ProductList() {
     return products;
   })();
 
+  // Hàm openDetail
   const openDetail = (product: Product) => {
     setSelectedProduct(product);
     setCheckedVariantIds(new Set());
   };
 
+  // Xử lý edit
   const handleEdit = (product: Product) => {
     const matchedCategory = categories.find(
       (cat) => cat.name.toLowerCase() === product.categoryLabel.toLowerCase()
@@ -333,6 +339,7 @@ export function ProductList() {
     setIsEditOpen(true);
   };
 
+  // Tạo mới attribute
   const addAttribute = () => {
     if (attributes.length >= 3) return;
     const defaultNames = ["Màu sắc", "Kích thước", "Chất liệu"];
@@ -343,6 +350,7 @@ export function ProductList() {
     setAttributes((prev) => [...prev, { name, values: [] }]);
   };
 
+  // Xóa attribute
   const removeAttribute = (index: number) => {
     if (selectedProduct) {
       // Thuộc tính ở vị trí index tương ứng với option(index+1)Value trên variant
@@ -363,11 +371,12 @@ export function ProductList() {
     setTagInputs((prev) => {
       const copy = [...prev];
       copy.splice(index, 1);
-      copy.push(""); // Keep length 3
+      copy.push(""); // Giữ độ dài 3
       return copy;
     });
   };
 
+  // Cập nhật attribute name
   const updateAttributeName = (index: number, name: string) => {
     setAttributes((prev) =>
       prev.map((attr, idx) => {
@@ -377,6 +386,7 @@ export function ProductList() {
     );
   };
 
+  // Cập nhật tag input
   const updateTagInput = (index: number, value: string) => {
     setTagInputs((prev) => {
       const copy = [...prev];
@@ -385,6 +395,7 @@ export function ProductList() {
     });
   };
 
+  // Xóa attribute value
   const removeAttributeValue = (attrIndex: number, valIndex: number) => {
     const attr = attributes[attrIndex];
     const val = attr.values[valIndex];
@@ -457,6 +468,7 @@ export function ProductList() {
     }
   };
 
+  // Xử lý tag blur
   const handleTagBlur = (attrIndex: number) => {
     const value = tagInputs[attrIndex].trim();
     if (value) {
@@ -483,6 +495,7 @@ export function ProductList() {
     }
   };
 
+  // Hàm startEditVariant
   const startEditVariant = (v: { label: string }) => {
     const override = variantPriceOverrides[v.label];
     setEditingPrices({
@@ -492,6 +505,7 @@ export function ProductList() {
     setEditingVariantLabel(v.label);
   };
 
+  // Hàm confirmEditVariant
   const confirmEditVariant = (label: string) => {
     setVariantPriceOverrides((prev) => {
       const next = { ...prev };
@@ -514,8 +528,10 @@ export function ProductList() {
     setEditingVariantLabel(null);
   };
 
+  // Hàm cancelEditVariant
   const cancelEditVariant = () => setEditingVariantLabel(null);
 
+  // Xóa variant
   const removeVariant = (label: string) => {
     const newRemovedLabels = new Set([...removedVariantLabels, label]);
     setRemovedVariantLabels(newRemovedLabels);
@@ -567,6 +583,7 @@ export function ProductList() {
         if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
       };
 
+  // Hàm formatInputNumber
   const formatInputNumber = (val: string | number) => {
     if (!val && val !== 0) return "";
     const cleanVal = String(val)
@@ -576,6 +593,7 @@ export function ProductList() {
     return new Intl.NumberFormat("vi-VN").format(Number(cleanVal));
   };
 
+  // Xử lý save
   const handleSave = async () => {
     const errs = validate(form, {
       name: [isRequired],
@@ -684,12 +702,14 @@ export function ProductList() {
     }
   };
 
+  // Hàm closeAllModals
   const closeAllModals = () => {
     setIsEditOpen(false);
     setSelectedProduct(null);
     setErrors({});
   };
 
+  // Hàm isFormUnchanged
   const isFormUnchanged = () => {
     if (!selectedProduct) return true;
 
@@ -736,6 +756,7 @@ export function ProductList() {
     );
   };
 
+  // Xử lý variant edit
   const handleVariantEdit = (variant: Variant) => {
     setVariantForm({
       sku: variant.sku,
@@ -754,6 +775,7 @@ export function ProductList() {
     setIsVariantEditOpen(true);
   };
 
+  // Xử lý variant save
   const handleVariantSave = async () => {
     const errs = validate(variantForm, {
       importPrice: [(v) => isPositiveNumber(v)],
@@ -824,6 +846,7 @@ export function ProductList() {
     }
   };
 
+  // Hàm closeVariantModals
   const closeVariantModals = () => {
     setIsVariantEditOpen(false);
     setSelectedVariant(null);
@@ -885,8 +908,10 @@ export function ProductList() {
   // Xóa chọn khi đóng hoặc đổi sản phẩm
   const resetChecked = () => setCheckedVariantIds(new Set());
 
+  // Hàm triggerRefresh
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
+  // Xử lý delete product
   const handleDeleteProduct = async () => {
     if (!deleteProductId) return;
     const targetProduct = products.find((p) => p.id === deleteProductId);
@@ -908,6 +933,7 @@ export function ProductList() {
     }
   };
 
+  // Xử lý delete variant
   const handleDeleteVariant = async () => {
     if (!deleteVariantId) return;
     try {
@@ -916,13 +942,11 @@ export function ProductList() {
         prev
           ? {
             ...prev,
-            variants: prev.variants.map((v) =>
-              v.id === deleteVariantId ? { ...v, status: "DELETED" } : v
-            ),
+            variants: prev.variants.filter((v) => v.id !== deleteVariantId),
           }
           : null
       );
-      showToast("Ngừng bán sản phẩm thành công!", "success");
+      showToast("Xóa biến thể thành công!", "success");
       triggerRefresh();
     } catch {
       showToast("Xóa phiên bản thất bại", "error");
@@ -931,6 +955,7 @@ export function ProductList() {
     }
   };
 
+  // Xử lý bulk delete
   const handleBulkDelete = async () => {
     try {
       await deleteVariants([...checkedVariantIds]);
@@ -938,13 +963,11 @@ export function ProductList() {
         prev
           ? {
             ...prev,
-            variants: prev.variants.map((v) =>
-              checkedVariantIds.has(v.id) ? { ...v, status: "DELETED" } : v
-            ),
+            variants: prev.variants.filter((v) => !checkedVariantIds.has(v.id)),
           }
           : null
       );
-      showToast(`Đổi trạng thái thành Ngừng bán thành công cho ${checkedVariantIds.size} phiên bản!`, "success");
+      showToast(`Đã xóa thành công ${checkedVariantIds.size} phiên bản!`, "success");
       setCheckedVariantIds(new Set());
       triggerRefresh();
     } catch {
@@ -954,6 +977,7 @@ export function ProductList() {
     }
   };
 
+  // Hàm toggleVariantCheck
   const toggleVariantCheck = (id: string) => {
     setCheckedVariantIds((prev) => {
       const next = new Set(prev);
@@ -963,6 +987,7 @@ export function ProductList() {
     });
   };
 
+  // Hàm toggleAllVariants
   const toggleAllVariants = (variants: Variant[]) => {
     if (checkedVariantIds.size === variants.length) {
       setCheckedVariantIds(new Set());
@@ -971,12 +996,14 @@ export function ProductList() {
     }
   };
 
+  // Hàm openBulkEdit
   const openBulkEdit = () => {
     setBulkForm({ importPrice: "", salePrice: "", status: "" });
     setBulkErrors({});
     setIsBulkEditOpen(true);
   };
 
+  // Xử lý bulk save
   const handleBulkSave = async () => {
     const errs: Record<string, string> = {};
     if (!bulkForm.importPrice && !bulkForm.salePrice && !bulkForm.status) {
@@ -1051,8 +1078,7 @@ export function ProductList() {
     }
   };
 
-
-
+  // Hàm isVariantFormUnchanged
   const isVariantFormUnchanged = () => {
     if (!selectedVariant) return true;
     return (
@@ -1067,6 +1093,7 @@ export function ProductList() {
     );
   };
 
+  // Hàm renderVariantEditForm
   const renderVariantEditForm = () => {
     // option1/2/3Name quyết định thuộc tính nào có mặt — render động, không hardcode tên
     const optionSlots = [
@@ -1139,7 +1166,7 @@ export function ProductList() {
             placeholder="0"
           />
 
-          {/* Render động các input thuộc tính theo đúng option name của sản phẩm */}
+          
           {optionSlots.map(({ key, name }) => (
             <Input
               key={key}
@@ -1168,7 +1195,7 @@ export function ProductList() {
           />
         </div>
 
-        {/* Hiển thị ô lý do điều chỉnh khi và chỉ khi số lượng thay đổi */}
+        
         {stockChanged && (
           <Input
             id="var-adjustReason"
@@ -1189,6 +1216,7 @@ export function ProductList() {
     );
   };
 
+  // Hàm renderEditForm
   const renderEditForm = () => (
     <div className={styles.form}>
       <div className={styles.formGrid}>
@@ -1434,7 +1462,6 @@ export function ProductList() {
                       (opt3Val ? vrt.option3Value === opt3Val : !vrt.option3Value)
                   );
                   const stock = existing?.stock || 0;
-                  const hasTransactions = existing?.hasTransactions || false;
                   return (
                     <tr
                       key={v.label}
@@ -1564,11 +1591,7 @@ export function ProductList() {
                               type="button"
                               className={[styles.actionBtn, styles.actionBtnDanger].join(" ")}
                               onClick={() => {
-                                if (hasTransactions) {
-                                  showToast("Không thể xóa phiên bản này vì đã tồn tại hóa đơn nhập hàng!", "warning");
-                                } else {
-                                  removeVariant(v.label);
-                                }
+                                removeVariant(v.label);
                               }}
                               title="Xóa biến thể"
                             >
@@ -1939,8 +1962,6 @@ export function ProductList() {
                                     e.stopPropagation();
                                     if (v.status?.toUpperCase() !== 'ACTIVE') {
                                       showToast("Sản phẩm đã ngừng bán!", "error");
-                                    } else if (v.hasTransactions) {
-                                      showToast(`Không thể xóa phiên bản SKU ${v.sku} vì đã tồn tại hóa đơn nhập hàng!`, "warning");
                                     } else {
                                       setDeleteVariantId(v.id);
                                     }
@@ -2082,7 +2103,7 @@ export function ProductList() {
       >
         {selectedVariant && selectedProduct && (
           <>
-            {/* Tab navigation */}
+            
             <div className={styles.tabNav}>
               <button
                 className={[styles.tabBtn, activeVariantTab === "info" ? styles.tabBtnActive : ""].join(" ")}
@@ -2107,7 +2128,7 @@ export function ProductList() {
               </button>
             </div>
 
-            {/* Tab: Thông tin chung */}
+            
             {activeVariantTab === "info" && (
               <div className={styles.detail}>
                 {(() => {
@@ -2163,7 +2184,7 @@ export function ProductList() {
               </div>
             )}
 
-            {/* Tab: Lịch sử giao dịch kho */}
+            
             {activeVariantTab === "history" && (
               <div>
                 {txLoading ? (
@@ -2213,7 +2234,7 @@ export function ProductList() {
                               </td>
                               <td style={{ textAlign: "center" }}>
                                 <span className={isIN ? styles.txQtyIn : isOUT ? styles.txQtyOut : styles.txQtyAdj}>
-                                  {/* {isIN || tx.quantity > 0 ? "+" : isOUT ? "-" : ""}{tx.quantity} */}
+                                  
                                   {isIN || tx.quantity > 0 ? "+" : ""}{tx.quantity}
                                 </span>
                               </td>
@@ -2271,7 +2292,7 @@ export function ProductList() {
                   </div>
                 )}
 
-                {/* Phân trang cho bảng transaction */}
+                
                 {txTotalElements > txPageSize && (
                   <div className={styles.txPaginationWrap}>
                     <Pagination
@@ -2352,7 +2373,7 @@ export function ProductList() {
         onCancel={() => setIsBulkDeleteConfirmOpen(false)}
       />
 
-      {/* Modal chi tiết đơn đặt hàng – mở khi click link PO trong bảng giao dịch */}
+      
       <Modal
         isOpen={!!poDetail}
         onClose={() => setPoDetail(null)}
@@ -2473,7 +2494,7 @@ export function ProductList() {
         )}
       </Modal>
 
-      {/* Quick-view User Modal */}
+      
       <UserDetailModal
         userId={quickViewUserId}
         userName={quickViewUserName}

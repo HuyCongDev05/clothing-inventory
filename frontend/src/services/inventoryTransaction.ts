@@ -33,6 +33,7 @@ interface BackendPageResponse<T> {
   totalPages: number;
 }
 
+// Lấy thông tin transactions by variant id
 export async function getTransactionsByVariantId(
   variantId: string | number,
   page: number = 1,

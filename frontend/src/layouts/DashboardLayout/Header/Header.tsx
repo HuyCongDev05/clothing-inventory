@@ -20,6 +20,7 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
+// Thành phần thanh tiêu đề Header
 export function Header({ onMenuClick, onToggleSidebar }: HeaderProps) {
   const location = useLocation();
 

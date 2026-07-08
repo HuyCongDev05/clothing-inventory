@@ -9,6 +9,7 @@ interface Toast {
   isExiting: boolean;
 }
 
+// Thành phần ToastItem
 function ToastItem({
   message,
   type,
@@ -20,6 +21,8 @@ function ToastItem({
   onClose: () => void;
   isExiting: boolean;
 }) {
+
+  // Lấy thông tin icon
   const getIcon = () => {
     switch (type) {
       case "success":
@@ -51,6 +54,7 @@ function ToastItem({
   );
 }
 
+// Thành phần ToastProvider
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 

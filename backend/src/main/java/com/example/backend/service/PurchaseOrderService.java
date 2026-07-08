@@ -44,12 +44,10 @@ public class PurchaseOrderService {
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final PurchaseOrderDetailMapper purchaseOrderDetailMapper;
 
-    public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, PurchaseOrderStatus status,
+    public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, Long supplierId, PurchaseOrderStatus status,
             LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
         Specification<PurchaseOrder> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-
-//            predicates.add(criteriaBuilder.notEqual(root.get("status"), PurchaseOrderStatus.CANCELLED));
 
             if (StringUtils.hasText(keyword)) {
                 String keywordLower = "%" + keyword.toLowerCase() + "%";
@@ -59,11 +57,14 @@ public class PurchaseOrderService {
                 predicates.add(criteriaBuilder.or(codePredicate, namePredicate));
             }
 
+            if (supplierId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("supplier").get("id"), supplierId));
+            }
+
             if (status != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
             }
 
-            // Lọc theo khoảng thời gian orderDate
             if (fromDate != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("orderDate"), fromDate));
             }
@@ -75,41 +76,13 @@ public class PurchaseOrderService {
         };
 
         Page<PurchaseOrder> purchaseOrderPage = purchaseOrderRepository.findAll(spec, pageable);
-        Page<PurchaseOrderResponseDto> dtoPage = purchaseOrderPage.map(this::buildResponseWithDetails);
-        return PageResponseDto.from(dtoPage);
+        return PageResponseDto.from(purchaseOrderPage.map(this::buildResponseWithDetails));
     }
 
-    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword,
+    public PageResponseDto<PurchaseOrderResponseDto> getReceivedPurchaseOrders(String keyword, Long supplierId,
             PurchaseOrderStatus status, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
         PurchaseOrderStatus finalStatus = (status == null) ? PurchaseOrderStatus.RECEIVED : status;
-
-        Specification<PurchaseOrder> spec = (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            predicates.add(criteriaBuilder.equal(root.get("status"), finalStatus));
-
-            if (StringUtils.hasText(keyword)) {
-                String keywordLower = "%" + keyword.toLowerCase() + "%";
-                Predicate codePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), keywordLower);
-                Predicate namePredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("supplier").get("name")), keywordLower);
-                predicates.add(criteriaBuilder.or(codePredicate, namePredicate));
-            }
-
-            // Lọc theo khoảng thời gian receivedDate (ngày nhập hàng)
-            if (fromDate != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("receivedDate"), fromDate));
-            }
-            if (toDate != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("receivedDate"), toDate));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<PurchaseOrder> page = purchaseOrderRepository.findAll(spec, pageable);
-        Page<PurchaseOrderResponseDto> dtoPage = page.map(this::buildResponseWithDetails);
-        return PageResponseDto.from(dtoPage);
+        return getAllPurchaseOrders(keyword, supplierId, finalStatus, fromDate, toDate, pageable);
     }
 
     public PurchaseOrderResponseDto getPurchaseOrderById(Long id) {

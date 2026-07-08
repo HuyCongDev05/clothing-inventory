@@ -8,15 +8,18 @@ import type { Supplier } from "../../../types/supplier.types";
 import { Pagination } from "../../../components/Pagination/Pagination";
 import styles from "./SupplierContact.module.css";
 
+// Trang liên hệ nhà cung cấp
 export function SupplierContact() {
   const [allActiveSuppliers, setAllActiveSuppliers] = useState<Supplier[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const pageSize = 9; // 9 fits beautifully in a 3-column grid!
+  const pageSize = 9; // Hiển thị đẹp mắt trên lưới 3 cột
   const { showToast } = useToast();
 
   useEffect(() => {
+
+    // Hàm fetchAllSuppliers
     const fetchAllSuppliers = async () => {
       try {
         const firstPage = await getSuppliersPage(1);
@@ -41,7 +44,7 @@ export function SupplierContact() {
     fetchAllSuppliers();
   }, []);
 
-  // Debounce search query
+  // Truy vấn tìm kiếm có độ trễ
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -50,7 +53,7 @@ export function SupplierContact() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Filter suppliers locally based on debounced search query
+  // Lọc nhà cung cấp cục bộ theo từ khóa
   const filteredSuppliers = useMemo(() => {
     if (!debouncedQuery.trim()) {
       return allActiveSuppliers;

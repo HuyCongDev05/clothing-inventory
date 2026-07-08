@@ -10,6 +10,7 @@ interface DecodedToken {
   authorities?: string[];
 }
 
+// Hàm decodeJwtPayload
 function decodeJwtPayload(token: string): DecodedToken | null {
   try {
     const parts = token.split(".");
@@ -36,6 +37,7 @@ const ROLE_MAP: Record<string, { label: string; icon: string }> = {
   "store-keeper": { label: "Thủ kho", icon: "fi fi-rr-users-alt" },
 };
 
+// Trang thông tin tài khoản cá nhân
 export function Profile() {
   const user = getCurrentUser();
   const token = localStorage.getItem("accessToken");

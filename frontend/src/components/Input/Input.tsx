@@ -8,6 +8,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   suffix?: string;
 }
 
+// Thành phần ô nhập liệu
 export function Input({
   label,
   error,

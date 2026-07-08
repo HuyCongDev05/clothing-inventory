@@ -594,9 +594,7 @@
   color: var(--color-primary);
 }
 
-/* =====================================================
-   Tab Navigation – dùng trong modal Chi tiết phiên bản
-   ===================================================== */
+
 .tabNav {
   display: flex;
   gap: 0;
@@ -631,9 +629,7 @@
   font-weight: 600;
 }
 
-/* =====================================================
-   Transaction Table – bảng lịch sử giao dịch kho
-   ===================================================== */
+
 .txTableWrapper {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -672,7 +668,7 @@
   background-color: var(--color-bg);
 }
 
-/* Badge loại giao dịch */
+
 .txBadge {
   display: inline-flex;
   align-items: center;
@@ -703,7 +699,7 @@
   color: var(--color-subtext);
 }
 
-/* Quantity delta cells */
+
 .txQtyIn {
   color: var(--color-success);
   font-weight: 600;
@@ -719,7 +715,7 @@
   font-weight: 600;
 }
 
-/* Link bấm vào mã PO */
+
 .poLink {
   background: transparent;
   border: none;
@@ -738,7 +734,7 @@
   opacity: 0.75;
 }
 
-/* Empty state cho bảng TX */
+
 .txEmpty {
   text-align: center;
   padding: var(--space-8) var(--space-4);
@@ -746,7 +742,7 @@
   font-size: var(--font-sm);
 }
 
-/* Loading skeleton cho bảng TX */
+
 .txLoading {
   text-align: center;
   padding: var(--space-6) var(--space-4);
@@ -754,7 +750,7 @@
   font-size: var(--font-sm);
 }
 
-/* Pagination wrapper trong modal */
+
 .txPaginationWrap {
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--color-border);
@@ -762,7 +758,7 @@
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
-/* PO Detail Section trong modal overlay */
+
 .poDetailSection {
   display: flex;
   flex-direction: column;
@@ -799,7 +795,7 @@
   gap: 5px;
 }
 
-/* Link bấm vào text thường */
+
 .clickableLink {
   background: transparent;
   border: none;

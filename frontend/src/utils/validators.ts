@@ -1,12 +1,15 @@
+// Kiểm tra trường bắt buộc
 export function isRequired(value: string): string | null {
   return value.trim() ? null : "Trường này là bắt buộc";
 }
 
+// Kiểm tra định dạng email
 export function isEmail(value: string): string | null {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(value) ? null : "Email không hợp lệ";
 }
 
+// Kiểm tra số điện thoại
 export function isPhone(value: string): string | null {
   const re = /^\+?[0-9]{7,15}$/;
   return re.test(value.replace(/\s/g, ""))
@@ -14,16 +17,19 @@ export function isPhone(value: string): string | null {
     : "Số điện thoại không hợp lệ";
 }
 
+// Kiểm tra số dương
 export function isPositiveNumber(value: number | string): string | null {
   const num = typeof value === "string" ? parseFloat(value) : value;
   return !isNaN(num) && num > 0 ? null : "Giá trị phải lớn hơn 0";
 }
 
+// Kiểm tra lớn hơn 0
 export function isGreaterThanZero(value: number | string): boolean {
   const num = typeof value === "string" ? parseFloat(value) : value;
   return !isNaN(num) && num > 0;
 }
 
+// Xác thực dữ liệu
 export function validate(
   fields: Record<string, string>,
   rules: Record<string, Array<(v: string) => string | null>>,

@@ -70,6 +70,7 @@ export interface PaginatedProducts {
   totalPages: number;
 }
 
+// Hàm mapBackendCategoryToFrontend
 function mapBackendCategoryToFrontend(categoryName: string): {
   category: ProductCategory;
   categoryLabel: string;
@@ -80,6 +81,7 @@ function mapBackendCategoryToFrontend(categoryName: string): {
   };
 }
 
+// Hàm mapBackendVariantToFrontend
 export function mapBackendVariantToFrontend(
   v: VariantResponseDto,
   option1Name?: string | null,
@@ -109,6 +111,7 @@ export function mapBackendVariantToFrontend(
   };
 }
 
+// Hàm mapBackendProductToFrontend
 export function mapBackendProductToFrontend(p: ProductResponseDto): Product {
   const { category, categoryLabel } = mapBackendCategoryToFrontend(
     p.categoryName,
@@ -157,6 +160,7 @@ export function mapBackendProductToFrontend(p: ProductResponseDto): Product {
   };
 }
 
+// Lấy thông tin products page
 export async function getProductsPage(
   page: number,
   keyword?: string,
@@ -190,6 +194,7 @@ export async function getProductsPage(
   };
 }
 
+// Lấy thông tin variant by id
 export async function getVariantById(
   variantId: string,
 ): Promise<ProductVariantDetailResponseDto> {
@@ -207,6 +212,7 @@ export interface PaginatedLowStock {
   totalPages: number;
 }
 
+// Lấy thông tin low stock variants page
 export async function getLowStockVariantsPage(
   page: number,
   keyword?: string,
@@ -268,6 +274,7 @@ export interface CategoryResponseDto {
   status: string;
 }
 
+// Tạo mới product
 export async function createProduct(
   payload: ProductCreateRequestDto,
 ): Promise<ProductResponseDto> {
@@ -281,43 +288,46 @@ export async function createProduct(
   return response.data;
 }
 
+// Lấy thông tin categories
 export async function getCategories(): Promise<CategoryResponseDto[]> {
   const response =
     await apiFetch<ApiResponse<CategoryResponseDto[]>>("/categories");
   return response.data;
 }
 
+// Tạo mới category
 export async function createCategory(name: string): Promise<CategoryResponseDto> {
-  // Backend yêu cầu cả code + name, tự sinh code theo format CAT-YYMMDD-XXXX
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(2);
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const code = `CAT-${yy}${mm}${dd}-${rand}`;
-
   const response = await apiFetch<ApiResponse<CategoryResponseDto>>("/categories", {
     method: "POST",
-    body: JSON.stringify({ code, name }),
+    body: JSON.stringify({ name }),
   });
   return response.data;
 }
 
+// Cập nhật category
 export async function updateCategory(
   id: number,
-  name: string,
-  existingCode: string
+  name: string
 ): Promise<CategoryResponseDto> {
-  // Backend yêu cầu cả code + name khi update, giữ nguyên code cũ
   const response = await apiFetch<ApiResponse<CategoryResponseDto>>(`/categories/${id}`, {
     method: "PUT",
-    body: JSON.stringify({ code: existingCode, name }),
+    body: JSON.stringify({ name }),
   });
   return response.data;
 }
 
+// Xóa category
 export async function deleteCategory(id: number): Promise<void> {
   await apiFetch<void>(`/categories/${id}`, { method: "DELETE" });
+}
+
+// Hàm restoreCategory
+export async function restoreCategory(name: string): Promise<CategoryResponseDto> {
+  const response = await apiFetch<ApiResponse<CategoryResponseDto>>("/categories/restore", {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+  return response.data;
 }
 
 // Xóa sản phẩm theo id
@@ -420,6 +430,7 @@ export interface VariantUpdatePayload {
   adjustReason?: string | null;
 }
 
+// Cập nhật variant
 export async function updateVariant(
   id: string,
   payload: VariantUpdatePayload,

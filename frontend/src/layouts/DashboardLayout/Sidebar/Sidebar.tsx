@@ -14,6 +14,7 @@ interface SidebarProps {
   user?: User | null;
 }
 
+// Thành phần thanh điều hướng Sidebar
 export function Sidebar({ collapsed = false, user: propUser }: SidebarProps) {
   const location = useLocation();
   const user = propUser !== undefined ? propUser : getCurrentUser();
@@ -36,8 +37,6 @@ export function Sidebar({ collapsed = false, user: propUser }: SidebarProps) {
           </div>
         )}
       </div>
-
-
 
       <div className={styles.navGroups}>
         {NAV_GROUPS.filter(

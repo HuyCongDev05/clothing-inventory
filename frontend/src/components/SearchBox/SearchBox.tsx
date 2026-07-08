@@ -5,6 +5,7 @@ interface SearchBoxProps extends InputHTMLAttributes<HTMLInputElement> {
   onClear?: () => void;
 }
 
+// Thành phần ô tìm kiếm
 export function SearchBox({ onClear, value, ...rest }: SearchBoxProps) {
   return (
     <div className={styles.wrapper}>

@@ -29,21 +29,25 @@ interface ApiOptions extends RequestInit {
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
+// Hàm subscribeTokenRefresh
 function subscribeTokenRefresh(cb: (token: string) => void) {
   refreshSubscribers.push(cb);
 }
 
+// Hàm onRefreshed
 function onRefreshed(token: string) {
   refreshSubscribers.forEach((cb) => cb(token));
   refreshSubscribers = [];
 }
 
+// Hàm clearSessionAndRedirect
 function clearSessionAndRedirect() {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("currentUser");
   window.location.href = "/login";
 }
 
+// Hàm apiFetch
 export async function apiFetch<T>(
   path: string,
   options: ApiOptions = {},
@@ -172,6 +176,16 @@ export async function apiFetch<T>(
       }
     } catch {
       // Phản hồi rỗng hoặc không phải JSON
+    }
+
+    // Tài khoản bị vô hiệu hóa → buộc đăng xuất
+    if (
+      response.status === 400 &&
+      typeof errorMessage === "string" &&
+      errorMessage.toLowerCase().includes("account is inactive")
+    ) {
+      clearSessionAndRedirect();
+      throw new ApiError(errorMessage, 400, errorData);
     }
 
     throw new ApiError(errorMessage, response.status, errorData);

@@ -12,6 +12,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
 }
 
+// Thành phần nút bấm
 export function Button({
   variant = "primary",
   size = "md",

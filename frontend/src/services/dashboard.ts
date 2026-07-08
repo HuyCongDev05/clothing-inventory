@@ -8,6 +8,7 @@ export interface DashboardResponseDto {
   totalInventory: number;
 }
 
+// Lấy thông tin dashboard stats
 export async function getDashboardStats(): Promise<DashboardResponseDto> {
   const response = await apiFetch<ApiResponse<DashboardResponseDto>>("/dashboard");
   return response.data;

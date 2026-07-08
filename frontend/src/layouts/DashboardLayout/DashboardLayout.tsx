@@ -14,6 +14,7 @@ import { ApiError } from "../../services/api";
 import { ROUTES } from "../../constants/routes";
 import styles from "./DashboardLayout.module.css";
 
+// Bố cục giao diện Dashboard
 export function DashboardLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -46,7 +47,7 @@ export function DashboardLayout() {
       </div>
 
       {
-        // Drawer cho mobile
+        // Thanh điều hướng trên thiết bị di động
       }
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Sidebar user={user} />

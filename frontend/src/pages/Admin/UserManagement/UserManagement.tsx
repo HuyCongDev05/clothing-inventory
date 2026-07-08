@@ -49,6 +49,7 @@ const translateUserError = (message: string): string => {
   return message;
 };
 
+// Trang quản lý người dùng
 export function UserManagement() {
   const authorities = getUserAuthorities();
   const isAdmin = authorities.includes("admin");
@@ -101,6 +102,7 @@ export function UserManagement() {
   useEffect(() => {
     if (!isAdmin) return;
 
+    // Hàm fetchUsers
     const fetchUsers = async () => {
       try {
         setLoadingUsers(true);
@@ -125,8 +127,10 @@ export function UserManagement() {
     fetchUsers();
   }, [isAdmin, usersPage, debouncedSearch, userStatusFilter, usersSortBy, usersSortDir, usersRefreshTrigger, showToast]);
 
+  // Hàm triggerUsersRefresh
   const triggerUsersRefresh = () => setUsersRefreshTrigger((prev) => prev + 1);
 
+  // Xử lý users sort
   const handleUsersSort = (field: "username" | "fullName" | "email" | "status" | "createdAt") => {
     if (usersSortBy === field) {
       setUsersSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -137,6 +141,7 @@ export function UserManagement() {
     setUsersPage(1);
   };
 
+  // Hàm buildUsersSortHeader
   const buildUsersSortHeader = (label: string, field: "username" | "fullName" | "email" | "status" | "createdAt") => {
     const isCurrent = usersSortBy === field;
     const isAsc = isCurrent && usersSortDir === "asc";
@@ -158,6 +163,7 @@ export function UserManagement() {
     );
   };
 
+  // Xử lý create
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.username || !createForm.fullName || !createForm.password) {
@@ -197,6 +203,7 @@ export function UserManagement() {
     }
   };
 
+  // Xử lý edit click
   const handleEditClick = (u: UserResponse) => {
     setSelectedUser(u);
     setEditForm({
@@ -210,6 +217,7 @@ export function UserManagement() {
     setIsEditOpen(true);
   };
 
+  // Xử lý edit submit
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
@@ -257,6 +265,7 @@ export function UserManagement() {
     return users.filter((u) => u.status !== "DELETED");
   }, [users]);
 
+  // Hàm toggleCreateRole
   const toggleCreateRole = (role: string) => {
     setCreateForm((prev) => {
       const has = prev.authorities.includes(role);
@@ -267,6 +276,7 @@ export function UserManagement() {
     });
   };
 
+  // Hàm toggleEditRole
   const toggleEditRole = (role: string) => {
     setEditForm((prev) => {
       const has = prev.authorities.includes(role);
@@ -390,7 +400,7 @@ export function UserManagement() {
         </Card>
       </div>
 
-      {/* Modal Tạo tài khoản mới */}
+      
       <Modal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -472,7 +482,7 @@ export function UserManagement() {
         </div>
       </Modal>
 
-      {/* Modal Chỉnh sửa tài khoản */}
+      
       <Modal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}

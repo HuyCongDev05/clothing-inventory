@@ -12,6 +12,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
+// Thành phần hộp thoại xác nhận
 export function ConfirmDialog({
   isOpen,
   title,

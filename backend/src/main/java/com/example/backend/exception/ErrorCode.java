@@ -24,7 +24,7 @@ public enum ErrorCode {
     CONFLICT_SUPPLIER_EMAIL(409, "Supplier email already exists"),
     CONFLICT_SUPPLIER_PHONE(409, "Supplier phone already exists"),
     CONFLICT_SUPPLIER_TAX_CODE(409, "Supplier tax code already exists"),
-    CONFLICT_CATEGORY_CODE(409, "Category code already exists"),
+    CONFLICT_CATEGORY_NAME(409, "Category name already exists"),
     CONFLICT_PRODUCT_CODE(409, "Product code already exists"),
     CONFLICT_PURCHASE_ORDER_CODE(409, "Purchase order code already exists"),
     CONFLICT_PAYMENT_METHOD_CODE(409, "Payment method code already exists"),

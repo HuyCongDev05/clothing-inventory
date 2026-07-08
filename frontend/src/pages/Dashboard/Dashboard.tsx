@@ -17,7 +17,6 @@ import { Pagination } from "../../components/Pagination/Pagination";
 import { Table } from "../../components/Table/Table";
 import type { TableColumn } from "../../types/common.types";
 
-
 const PAYMENT_STATUS_LABEL: Record<string, string> = {
   UNPAID: "Chưa thanh toán",
   PARTIALLY_PAID: "Thanh toán một phần",
@@ -44,11 +43,15 @@ const DATE_PRESET_OPTIONS: { value: DatePreset | ""; label: string }[] = [
   { value: "custom",     label: "Tự chọn..." },
 ];
 
+// Hàm toDateString
 function toDateString(d: Date): string {
+
+  // Hàm pad
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// Lấy thông tin date range for preset
 function getDateRangeForPreset(preset: DatePreset): { from: string; to: string } {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0=CN, 1=T2, ..., 6=T7
@@ -81,16 +84,18 @@ function getDateRangeForPreset(preset: DatePreset): { from: string; to: string }
   return { from: "", to: "" };
 }
 
+// Hàm toIsoLocal
 function toIsoLocal(dateStr: string, endOfDay: boolean): string {
   return `${dateStr}T${endOfDay ? "23:59:59" : "00:00:00"}`;
 }
 
+// Trang thống kê Dashboard
 export function Dashboard() {
   const authorities = getUserAuthorities();
   const isAdmin = authorities.includes("admin");
   const { showToast } = useToast();
 
-  // Stats
+  // Thống kê
   const [totalRevenue, setTotalRevenue] = useState<number | string>("...");
   const [supplierCount, setSupplierCount] = useState<number | string>("...");
   const [productCount, setProductCount] = useState<number | string>("...");
@@ -113,7 +118,7 @@ export function Dashboard() {
   const [dateFrom, setDateFrom]     = useState(""); // ISO LocalDateTime gửi lên BE
   const [dateTo, setDateTo]         = useState(""); // ISO LocalDateTime gửi lên BE
 
-  // Low-stock variants
+  // Biến thể sắp hết hàng
   const [lowStockItems, setLowStockItems] = useState<ProductVariantDetailResponseDto[]>([]);
   const [lowStockTotal, setLowStockTotal] = useState(0);
   const [lowStockPage, setLowStockPage] = useState(1);
@@ -123,7 +128,7 @@ export function Dashboard() {
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [lowStockStatus, setLowStockStatus] = useState<"" | "ACTIVE" | "INACTIVE">("");
 
-  // Debounce search
+  // Tìm kiếm có độ trễ
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedKeyword(lowStockKeyword);
@@ -154,6 +159,8 @@ export function Dashboard() {
   // Load low-stock variants từ API
   useEffect(() => {
     if (!isAdmin) return;
+
+    // Hàm fetch
     const fetch = async () => {
       setLowStockLoading(true);
       try {
@@ -176,7 +183,7 @@ export function Dashboard() {
     fetch();
   }, [isAdmin, lowStockPage, debouncedKeyword, lowStockStatus]);
 
-  // Debounce search for receipts
+  // Tìm kiếm có độ trễ for receipts
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedReceiptsKeyword(recentReceiptsKeyword);
@@ -188,6 +195,8 @@ export function Dashboard() {
   // Load recent receipts từ API
   useEffect(() => {
     if (!isAdmin) return;
+
+    // Hàm fetchReceipts
     const fetchReceipts = async () => {
       setRecentReceiptsLoading(true);
       try {
@@ -399,7 +408,7 @@ export function Dashboard() {
         </div>
 
         <div className={styles.content}>
-          {/* Phiếu nhập gần đây */}
+          
           <div>
             <div className={styles.filterBar}>
               <Select
@@ -443,7 +452,7 @@ export function Dashboard() {
                   }}
                 />
 
-                {/* Custom date inputs — chỉ hiện khi chọn "Tự chọn" */}
+                
                 {datePreset === "custom" && (
                   <div className={styles.customDateRow}>
                     <input
@@ -516,7 +525,7 @@ export function Dashboard() {
             </Card>
           </div>
 
-          {/* Sản phẩm sắp hết hàng */}
+          
           <div>
             <div className={styles.filterBar}>
               <Select

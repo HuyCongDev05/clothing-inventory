@@ -10,6 +10,7 @@ interface TableProps<T> {
   loading?: boolean;
 }
 
+// Thành phần bảng dữ liệu
 export function Table<T>({
   columns,
   data,

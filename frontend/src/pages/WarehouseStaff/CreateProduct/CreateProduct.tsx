@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ProductFormData } from "../../../types/product.types";
 import { Input } from "../../../components/Input/Input";
-import { Select } from "../../../components/Select/Select";
 import { Button } from "../../../components/Button/Button";
 import { Card, CardHeader, CardBody } from "../../../components/Card/Card";
 import {
@@ -24,6 +23,122 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog/ConfirmDialog";
 import { CategoryManagerModal } from "../../../components/CategoryManagerModal/CategoryManagerModal";
 import styles from "./CreateProduct.module.css";
 
+interface SearchableCategoryDropdownProps {
+  value: string;
+  onChange: (val: string) => void;
+  categories: CategoryResponseDto[];
+  onManageCategories: () => void;
+  error?: string;
+}
+
+// Bộ chọn danh mục hỗ trợ tìm kiếm và quản lý nhanh
+function SearchableCategoryDropdown({
+  value,
+  onChange,
+  categories,
+  onManageCategories,
+  error,
+}: SearchableCategoryDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+
+    // Xử lý click outside
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return categories;
+    return categories.filter((cat) =>
+      cat.name.toLowerCase().includes(q)
+    );
+  }, [categories, search]);
+
+  const selectedCategory = categories.find((c) => String(c.id) === value);
+
+  return (
+    <div className={styles.dropdownContainer} ref={dropdownRef}>
+      <div
+        className={styles.dropdownTrigger}
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ borderColor: error ? "var(--color-danger)" : undefined }}
+      >
+        <span>
+          {selectedCategory ? selectedCategory.name : "-- Chọn danh mục --"}
+        </span>
+        <i className={`fi fi-rr-angle-small-${isOpen ? "up" : "down"}`} />
+      </div>
+      {isOpen && (
+        <div className={styles.dropdownMenu}>
+          <div className={styles.dropdownSearchWrapper}>
+            <i className="fi fi-rr-search" />
+            <input
+              type="text"
+              className={styles.dropdownSearchInput}
+              placeholder="Tìm danh mục..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className={styles.dropdownList}>
+            {filtered.map((cat) => {
+              const isCurrentSelected = String(cat.id) === value;
+              return (
+                <div
+                  key={cat.id}
+                  className={[
+                    styles.dropdownItem,
+                    isCurrentSelected ? styles.activeItem : "",
+                  ].join(" ")}
+                  onClick={() => {
+                    onChange(String(cat.id));
+                    setIsOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <span>{cat.name}</span>
+                  {isCurrentSelected && (
+                    <div className={styles.checkmarkWrapper}>
+                      <i className="fi fi-rr-check" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div className={styles.noResults}>Không tìm thấy danh mục</div>
+            )}
+          </div>
+          <div
+            className={styles.dropdownManageBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              onManageCategories();
+              setIsOpen(false);
+            }}
+          >
+            <i className="fi fi-rr-settings-sliders" />
+            <span>Quản lý danh mục</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const INITIAL: ProductFormData = {
   sku: "",
   name: "",
@@ -41,6 +156,7 @@ interface ProductAttribute {
   values: string[];
 }
 
+// Màn hình tạo mới sản phẩm
 export function CreateProduct() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ProductFormData>(INITIAL);
@@ -85,12 +201,9 @@ export function CreateProduct() {
     }
   }, [isSubmitSuccessful, navigate]);
 
-  const categoryOptions = categories.map((cat) => ({
-    value: String(cat.id),
-    label: cat.name,
-  }));
   const [tagInputs, setTagInputs] = useState<string[]>(["", "", ""]);
 
+  // Tạo mới attribute
   const addAttribute = () => {
     if (attributes.length >= 3) return;
     const defaultNames = ["Màu sắc", "Kích thước", "Chất liệu"];
@@ -101,16 +214,18 @@ export function CreateProduct() {
     setAttributes((prev) => [...prev, { name, values: [] }]);
   };
 
+  // Xóa attribute
   const removeAttribute = (index: number) => {
     setAttributes((prev) => prev.filter((_, idx) => idx !== index));
     setTagInputs((prev) => {
       const copy = [...prev];
       copy.splice(index, 1);
-      copy.push(""); // Keep length 3
+      copy.push(""); // Giữ độ dài 3
       return copy;
     });
   };
 
+  // Cập nhật attribute name
   const updateAttributeName = (index: number, name: string) => {
     setAttributes((prev) =>
       prev.map((attr, idx) => {
@@ -120,6 +235,7 @@ export function CreateProduct() {
     );
   };
 
+  // Cập nhật tag input
   const updateTagInput = (index: number, value: string) => {
     setTagInputs((prev) => {
       const copy = [...prev];
@@ -128,6 +244,7 @@ export function CreateProduct() {
     });
   };
 
+  // Xóa attribute value
   const removeAttributeValue = (attrIndex: number, valIndex: number) => {
     setAttributes((prev) =>
       prev.map((attr, idx) => {
@@ -183,6 +300,7 @@ export function CreateProduct() {
     }
   };
 
+  // Xử lý tag blur
   const handleTagBlur = (attrIndex: number) => {
     const value = tagInputs[attrIndex].trim();
     if (value) {
@@ -205,7 +323,7 @@ export function CreateProduct() {
         copy[attrIndex] = "";
         return copy;
       });
-      // New values added → reset removed variants so new combos all appear
+      // Thêm giá trị mới, khôi phục tổ hợp biến thể
       setRemovedVariantLabels(new Set());
     }
   };
@@ -229,6 +347,7 @@ export function CreateProduct() {
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     };
 
+  // Hàm formatInputNumber
   const formatInputNumber = (val: string | number) => {
     if (!val && val !== 0) return "";
     const cleanVal = String(val)
@@ -280,6 +399,7 @@ export function CreateProduct() {
     (v) => !removedVariantLabels.has(v.label),
   );
 
+  // Hàm startEditVariant
   const startEditVariant = (v: { label: string }) => {
     const override = variantPriceOverrides[v.label];
     setEditingPrices({
@@ -289,6 +409,7 @@ export function CreateProduct() {
     setEditingVariantLabel(v.label);
   };
 
+  // Hàm confirmEditVariant
   const confirmEditVariant = (label: string) => {
     setVariantPriceOverrides((prev) => {
       const next = { ...prev };
@@ -311,8 +432,10 @@ export function CreateProduct() {
     setEditingVariantLabel(null);
   };
 
+  // Hàm cancelEditVariant
   const cancelEditVariant = () => setEditingVariantLabel(null);
 
+  // Xóa variant
   const removeVariant = (label: string) => {
     const newRemovedLabels = new Set([...removedVariantLabels, label]);
     setRemovedVariantLabels(newRemovedLabels);
@@ -359,6 +482,7 @@ export function CreateProduct() {
     });
   };
 
+  // Xử lý submit
   const handleSubmit = async () => {
     const errs = validate(form as unknown as Record<string, string>, {
       name: [isRequired],
@@ -449,6 +573,7 @@ export function CreateProduct() {
     }
   };
 
+  // Xử lý clear all
   const handleClearAll = () => {
     const defaultCategory = categories.length > 0 ? String(categories[0].id) : "";
     setForm({ ...INITIAL, category: defaultCategory });
@@ -473,7 +598,7 @@ export function CreateProduct() {
 
         <div className={styles.content}>
           <div className={styles.mainCol}>
-            <Card>
+            <Card className={styles.visibleOverflowCard}>
               <CardHeader title="Thông tin cơ bản" />
               <CardBody>
                 <div className={styles.formGrid}>
@@ -494,30 +619,25 @@ export function CreateProduct() {
                     error={errors.brand}
                     placeholder="VD: SapoBrand"
                   />
-                  <div className={styles.categoryField}>
-                    <div className={styles.categoryLabel}>
-                      <label htmlFor="category" className={styles.label}>
-                        Danh mục <span className={styles.required}>*</span>
-                      </label>
-                      <button
-                        type="button"
-                        className={styles.addCategoryBtn}
-                        onClick={() => setShowCategoryModal(true)}
-                        title="Quản lý danh mục"
-                        aria-label="Quản lý danh mục"
-                      >
-                        <i className="fi fi-rr-add" />
-                      </button>
-                    </div>
-                    <Select
-                      id="category"
-                      label=""
-                      required
-                      options={categoryOptions}
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                      Danh mục <span className={styles.required}>*</span>
+                    </label>
+                    <SearchableCategoryDropdown
                       value={form.category}
-                      onChange={handleChange("category")}
+                      onChange={(val) => {
+                        setForm((prev) => ({ ...prev, category: val }));
+                        if (errors.category) setErrors((prev) => ({ ...prev, category: "" }));
+                      }}
+                      categories={categories}
+                      onManageCategories={() => setShowCategoryModal(true)}
                       error={errors.category}
                     />
+                    {errors.category && (
+                      <span className={styles.errorText}>
+                        {errors.category}
+                      </span>
+                    )}
                   </div>
                   <Input
                     id="unit"

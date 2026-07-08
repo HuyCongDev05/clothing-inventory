@@ -3,6 +3,7 @@ package com.example.backend.service;
 import com.example.backend.dto.request.SupplierRequestDto;
 import com.example.backend.dto.response.PageResponseDto;
 import com.example.backend.dto.response.SupplierResponseDto;
+import com.example.backend.dto.response.SupplierSimpleResponseDto;
 import com.example.backend.exception.ErrorCode;
 import com.example.backend.exception.InvalidException;
 import com.example.backend.mapper.SupplierMapper;
@@ -51,6 +52,12 @@ public class SupplierService {
         };
         Page<Supplier> supplierPage = supplierRepository.findAll(spec, pageable);
         return PageResponseDto.from(supplierPage.map(supplierMapper::toResponse));
+    }
+
+    public List<SupplierSimpleResponseDto> getAllSuppliersSimpleList() {
+        return supplierRepository.findAll().stream()
+                .map(supplierMapper::toSimpleResponse)
+                .toList();
     }
 
     @Transactional

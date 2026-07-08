@@ -12,7 +12,7 @@ import { useToast } from "../../../components/Toast/ToastContext";
 import { SupplierDetailModal } from "../../../components/SupplierDetailModal/SupplierDetailModal";
 import { VariantDetailModal } from "../../../components/VariantDetailModal/VariantDetailModal";
 import { UserDetailModal } from "../../../components/UserDetailModal/UserDetailModal";
-import { getSuppliersPage } from "../../../services/supplier";
+import { getSuppliersAll } from "../../../services/supplier";
 import { getProductsPage } from "../../../services/product";
 import {
   getPurchaseOrdersPage,
@@ -27,7 +27,6 @@ import type { PurchaseOrder } from "../../../types/purchaseOrder.types";
 import type { Supplier } from "../../../types/supplier.types";
 import type { Product } from "../../../types/product.types";
 import styles from "./PurchaseOrder.module.css";
-
 
 const ORDER_STATUS_LABEL: Record<string, string> = {
   DRAFT: "Nháp",
@@ -53,6 +52,8 @@ function formatVariantName(
 // để backend nhận LocalDateTime chính xác (giống Phiếu nhập kho)
 function nowLocalIsoString(): string {
   const now = new Date();
+
+  // Hàm pad
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
@@ -72,18 +73,15 @@ const DATE_PRESET_OPTIONS: { value: DatePreset | ""; label: string }[] = [
   { value: "custom",     label: "Tự chọn..." },
 ];
 
-/**
- * Định dạng một Date thành chuỗi "YYYY-MM-DD" (local, không có UTC offset).
- */
+// Hàm toDateString
 function toDateString(d: Date): string {
+
+  // Hàm pad
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/**
- * Tính khoảng ngày cho preset định sẵn.
- * Tuần tính từ Thứ Hai (ISO 8601).
- */
+// Lấy thông tin date range for preset
 function getDateRangeForPreset(preset: DatePreset): { from: string; to: string } {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0=CN, 1=T2, ..., 6=T7
@@ -122,13 +120,10 @@ function getDateRangeForPreset(preset: DatePreset): { from: string; to: string }
   return { from: "", to: "" };
 }
 
-/**
- * Chuyển chuỗi "YYYY-MM-DD" sang ISO LocalDateTime với giờ 00:00:00 hoặc 23:59:59.
- */
+// Hàm toIsoLocal
 function toIsoLocal(dateStr: string, endOfDay: boolean): string {
   return `${dateStr}T${endOfDay ? "23:59:59" : "00:00:00"}`;
 }
-
 
 interface SearchableProductDropdownProps {
   value: string;
@@ -137,6 +132,7 @@ interface SearchableProductDropdownProps {
   selectedIds: string[];
 }
 
+// Thành phần SearchableProductDropdown
 function SearchableProductDropdown({
   value,
   onChange,
@@ -148,6 +144,8 @@ function SearchableProductDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+
+    // Xử lý click outside
     function handleClickOutside(e: MouseEvent) {
       if (
         dropdownRef.current &&
@@ -242,7 +240,6 @@ function SearchableProductDropdown({
   );
 }
 
-
 interface LineItem {
   _key: string; // key nội bộ để render danh sách
   variantId: string;
@@ -263,7 +260,7 @@ const EMPTY_LINE: LineItem = {
   lineTotal: 0,
 };
 
-
+// Thành phần PurchaseOrderPage
 export function PurchaseOrderPage() {
   const { showToast } = useToast();
 
@@ -280,6 +277,7 @@ export function PurchaseOrderPage() {
   const [sortBy, setSortBy] = useState<"orderDate" | "totalAmount" | "totalQuantity">("orderDate");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [statusFilter, setStatusFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
 
   // Bộ lọc thời gian
   const [datePreset, setDatePreset] = useState<DatePreset | "">("");
@@ -305,21 +303,17 @@ export function PurchaseOrderPage() {
   ]);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
-  // State cho quick-view modals
+  // Trạng thái các cửa sổ xem nhanh
   const [quickViewSupplierId, setQuickViewSupplierId] = useState<string | null>(null);
   const [quickViewVariantId, setQuickViewVariantId] = useState<string | null>(null);
   const [quickViewUserId, setQuickViewUserId] = useState<string | null>(null);
   const [quickViewUserName, setQuickViewUserName] = useState<string>("");
 
+  // Tải danh sách nhà cung cấp và sản phẩm khi khởi tạo
   useEffect(() => {
-    getSuppliersPage(1)
-      .then(async (first) => {
-        let all = [...first.items];
-        for (let p = 2; p <= first.totalPages; p++) {
-          const page = await getSuppliersPage(p);
-          all = all.concat(page.items);
-        }
-        setSuppliers(all.filter((s) => s.status === "active"));
+    getSuppliersAll()
+      .then((data) => {
+        setSuppliers(data);
       })
       .catch(console.error);
 
@@ -408,6 +402,8 @@ export function PurchaseOrderPage() {
   };
 
   useEffect(() => {
+
+    // Hàm fetchOrders
     const fetchOrders = async () => {
       try {
         setLoading(true);
@@ -419,6 +415,7 @@ export function PurchaseOrderPage() {
           sortDir,
           dateFrom || undefined,
           dateTo || undefined,
+          supplierFilter || undefined,
         );
         setOrders(data.items);
         setTotalElements(data.totalElements);
@@ -433,8 +430,9 @@ export function PurchaseOrderPage() {
       }
     };
     fetchOrders();
-  }, [currentPage, refreshTrigger, debouncedQuery, sortBy, sortDir, showToast, statusFilter, dateFrom, dateTo]);
+  }, [currentPage, refreshTrigger, debouncedQuery, sortBy, sortDir, showToast, statusFilter, dateFrom, dateTo, supplierFilter]);
 
+  // Hàm triggerRefresh
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
   // Luôn dùng s.id (đã là chuỗi số nguyên hợp lệ sau khi mapper chạy String(s.id))
@@ -487,12 +485,14 @@ export function PurchaseOrderPage() {
     );
   };
 
+  // Tạo mới line
   const addLine = () =>
     setFormLines((prev) => [
       ...prev,
       { ...EMPTY_LINE, _key: String(Date.now()) },
     ]);
 
+  // Xóa line
   const removeLine = (idx: number) =>
     setFormLines((prev) => prev.filter((_, i) => i !== idx));
 
@@ -505,12 +505,14 @@ export function PurchaseOrderPage() {
     [formLines],
   );
 
+  // Hàm resetForm
   const resetForm = () => {
     setFormSupplierId("");
     setFormNote("");
     setFormLines([{ ...EMPTY_LINE, _key: "1" }]);
   };
 
+  // Hàm openCreate
   const openCreate = () => {
     resetForm();
     setIsCreateOpen(true);
@@ -535,6 +537,7 @@ export function PurchaseOrderPage() {
     setDetailOrder(null);
   };
 
+  // Xử lý create
   const handleCreate = async () => {
     if (!formSupplierId) {
       showToast("Vui lòng chọn nhà cung cấp", "warning");
@@ -585,6 +588,7 @@ export function PurchaseOrderPage() {
     }
   };
 
+  // Xử lý save edit
   const handleSaveEdit = async () => {
     if (!editingOrder) return;
     if (!formSupplierId) {
@@ -627,7 +631,6 @@ export function PurchaseOrderPage() {
     }
   };
 
-
   const handleUpdateStatus = async (
     id: string,
     status: PurchaseOrder["status"],
@@ -652,6 +655,7 @@ export function PurchaseOrderPage() {
     }
   };
 
+  // Hàm renderForm
   const renderForm = () => (
     <div className={styles.form}>
       <div className={styles.formRow}>
@@ -753,6 +757,7 @@ export function PurchaseOrderPage() {
     </div>
   );
 
+  // Hàm renderDetail
   const renderDetail = (order: PurchaseOrder) => (
     <div className={styles.detailSection}>
       <div className={styles.detailHeader}>
@@ -988,7 +993,7 @@ export function PurchaseOrderPage() {
         </div>
 
         <div className={styles.filterBar}>
-          {/* Lọc trạng thái */}
+          
           <div className={styles.filterGroup}>
             <Select
               id="statusFilter"
@@ -1006,7 +1011,25 @@ export function PurchaseOrderPage() {
             />
           </div>
 
-          {/* Lọc thời gian */}
+          <div className={styles.filterGroup}>
+            <Select
+              id="supplierFilter"
+              options={[
+                { value: "", label: "Tất cả nhà cung cấp" },
+                ...suppliers.map((s) => ({
+                  value: s.id,
+                  label: `${s.companyName} (${s.code})`,
+                })),
+              ]}
+              value={supplierFilter}
+              onChange={(e) => {
+                setSupplierFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          
           <div className={styles.dateFilterGroup}>
             <Select
               id="datePresetFilter"
@@ -1037,7 +1060,7 @@ export function PurchaseOrderPage() {
               }}
             />
 
-            {/* Custom date inputs — chỉ hiện khi chọn "Tự chọn" */}
+            
             {datePreset === "custom" && (
               <div className={styles.customDateRow}>
                 <input
@@ -1232,7 +1255,7 @@ export function PurchaseOrderPage() {
         onCancel={() => setConfirmCancel(null)}
       />
 
-      {/* Quick-view modals: thông tin tương tác read-only */}
+      
       <SupplierDetailModal
         supplierId={quickViewSupplierId}
         onClose={() => setQuickViewSupplierId(null)}

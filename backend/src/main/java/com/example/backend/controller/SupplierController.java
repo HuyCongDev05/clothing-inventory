@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.dto.request.SupplierRequestDto;
 import com.example.backend.dto.response.PageResponseDto;
 import com.example.backend.dto.response.SupplierResponseDto;
+import com.example.backend.dto.response.SupplierSimpleResponseDto;
 import com.example.backend.model.enums.Status;
 import com.example.backend.service.SupplierService;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -38,6 +40,11 @@ public class SupplierController {
 
         Pageable pageable = PageRequest.of(page - 1, 10, buildSort(sortBy, sortDirection));
         return ResponseEntity.ok(supplierService.getAllSuppliers(keyword, status, pageable));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<SupplierSimpleResponseDto>> getAllSuppliersSimpleList() {
+        return ResponseEntity.ok(supplierService.getAllSuppliersSimpleList());
     }
 
     @GetMapping("/{id}")

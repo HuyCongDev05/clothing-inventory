@@ -7,6 +7,7 @@ interface UseSearchReturn<T> {
   filteredItems: T[];
 }
 
+// Hook hỗ trợ tìm kiếm
 export function useSearch<T>(
   items: T[],
   searchKeys: (keyof T)[],

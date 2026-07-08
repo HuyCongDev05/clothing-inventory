@@ -8,6 +8,7 @@ interface UsePaginationReturn<T> {
   setPageSize: (size: number) => void;
 }
 
+// Hook hỗ trợ phân trang
 export function usePagination<T>(
   items: T[],
   initialPageSize: number = 10,
@@ -22,12 +23,14 @@ export function usePagination<T>(
     return items.slice(start, start + pageSize);
   }, [items, page, pageSize]);
 
+  // Hàm goToPage
   const goToPage = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
     }
   };
 
+  // Hàm setPageSize
   const setPageSize = (size: number) => {
     setPageSizeState(size);
     setPage(1);

@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
-
 import java.util.Set;
 
 @RestController
@@ -37,6 +36,7 @@ public class PurchaseOrderController {
     public ResponseEntity<PageResponseDto<PurchaseOrderResponseDto>> getAllPurchaseOrders(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page number must be greater than or equal to 1") int page,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long supplierId,
             @RequestParam(required = false) PurchaseOrderStatus status,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection,
@@ -46,7 +46,7 @@ public class PurchaseOrderController {
         LocalDateTime from = parseDateTime(fromDate);
         LocalDateTime to   = parseDateTime(toDate);
         Pageable pageable = PageRequest.of(page - 1, 10, buildSort(sortBy, sortDirection));
-        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders(keyword, status, from, to, pageable));
+        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders(keyword, supplierId, status, from, to, pageable));
     }
 
     @PreAuthorize("hasAuthority('coordinator')")
@@ -54,6 +54,7 @@ public class PurchaseOrderController {
     public ResponseEntity<PageResponseDto<PurchaseOrderResponseDto>> getReceivedPurchaseOrders(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page number must be greater than or equal to 1") int page,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long supplierId,
             @RequestParam(required = false) PurchaseOrderStatus status,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection,
@@ -63,7 +64,7 @@ public class PurchaseOrderController {
         LocalDateTime from = parseDateTime(fromDate);
         LocalDateTime to   = parseDateTime(toDate);
         Pageable pageable = PageRequest.of(page - 1, 10, buildSort(sortBy, sortDirection));
-        return ResponseEntity.ok(purchaseOrderService.getReceivedPurchaseOrders(keyword, status, from, to, pageable));
+        return ResponseEntity.ok(purchaseOrderService.getReceivedPurchaseOrders(keyword, supplierId, status, from, to, pageable));
     }
 
     @PreAuthorize("hasAuthority('coordinator')")

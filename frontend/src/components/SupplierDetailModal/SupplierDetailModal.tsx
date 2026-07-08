@@ -15,6 +15,7 @@ const STATUS_LABEL: Record<string, string> = {
   inactive: "Ngừng hoạt động",
 };
 
+// Định dạng ngày giờ
 function formatDateTime(dateStr?: string): string {
   if (!dateStr) return "—";
   try {
@@ -30,6 +31,7 @@ function formatDateTime(dateStr?: string): string {
   }
 }
 
+// Thành phần hiển thị chi tiết nhà cung cấp
 export function SupplierDetailModal({ supplierId, onClose }: SupplierDetailModalProps) {
   const [prevSupplierId, setPrevSupplierId] = useState<string | null>(null);
   const [supplier, setSupplier] = useState<Supplier | null>(null);

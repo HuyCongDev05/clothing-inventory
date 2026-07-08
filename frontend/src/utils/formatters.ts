@@ -1,3 +1,4 @@
+// Định dạng tiền tệ
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -5,24 +6,30 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Định dạng số
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("vi-VN").format(value);
 }
 
+// Định dạng ngày
 export function formatDate(dateStr: string): string {
   if (!dateStr) return "—";
   const date = new Date(dateStr);
   return new Intl.DateTimeFormat("vi-VN").format(date);
 }
 
+// Định dạng số điện thoại
 export function formatPhone(phone: string): string {
   return phone.replace(/(\d{4})(\d{3})(\d{3})/, "$1 $2 $3");
 }
 
+// Định dạng ngày giờ
 export function formatDateTime(dateStr: string): string {
   if (!dateStr) return "—";
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
+
+  // Hàm pad
   const pad = (num: number) => String(num).padStart(2, "0");
 
   const hours = pad(date.getHours());

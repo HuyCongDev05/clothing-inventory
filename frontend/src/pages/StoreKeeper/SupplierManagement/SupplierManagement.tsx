@@ -89,6 +89,7 @@ const translateBackendError = (message: string): string => {
   return message;
 };
 
+// Trang quản lý nhà cung cấp
 export function SupplierManagement() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
@@ -123,6 +124,8 @@ export function SupplierManagement() {
   }, [searchQuery]);
 
   useEffect(() => {
+
+    // Hàm fetchSuppliers
     const fetchSuppliers = async () => {
       try {
         setLoading(true);
@@ -148,6 +151,7 @@ export function SupplierManagement() {
     fetchSuppliers();
   }, [currentPage, refreshTrigger, showToast, debouncedQuery, sortBy, sortDir, statusFilter]);
 
+  // Xử lý sort
   const handleSort = (field: "name" | "email" | "phone" | "createdAt") => {
     console.log("[SupplierManagement Sort] Clicked:", field, "Current state:", { sortBy, sortDir });
     if (sortBy === field) {
@@ -183,8 +187,10 @@ export function SupplierManagement() {
     );
   };
 
+  // Hàm triggerRefresh
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
+  // Hàm isFormUnchanged
   const isFormUnchanged = () => {
     if (!selectedSupplier) return true;
     return (
@@ -199,6 +205,7 @@ export function SupplierManagement() {
     );
   };
 
+  // Hàm isFormInvalidForAdd
   const isFormInvalidForAdd = () => {
     return (
       !form.companyName ||
@@ -210,6 +217,7 @@ export function SupplierManagement() {
     );
   };
 
+  // Hàm openAdd
   const openAdd = () => {
     setForm(INITIAL_FORM);
     setErrors({});
@@ -217,6 +225,7 @@ export function SupplierManagement() {
     setModalMode("add");
   };
 
+  // Hàm openEdit
   const openEdit = (supplier: Supplier) => {
     setForm({
       companyName: supplier.companyName,
@@ -233,11 +242,13 @@ export function SupplierManagement() {
     setModalMode("edit");
   };
 
+  // Hàm openDetail
   const openDetail = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setModalMode("detail");
   };
 
+  // Hàm closeModal
   const closeModal = () => {
     setModalMode(null);
     setSelectedSupplier(null);
@@ -251,6 +262,7 @@ export function SupplierManagement() {
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     };
 
+  // Hàm validateForm
   const validateForm = () =>
     validate(form as unknown as Record<string, string>, {
       companyName: [isRequired],
@@ -261,6 +273,7 @@ export function SupplierManagement() {
       address: [isRequired],
     });
 
+  // Xử lý add
   const handleAdd = async () => {
     const errs = validateForm();
     if (Object.keys(errs).length) {
@@ -284,6 +297,7 @@ export function SupplierManagement() {
     }
   };
 
+  // Xử lý edit
   const handleEdit = async () => {
     const errs = validateForm();
     if (Object.keys(errs).length) {
@@ -367,7 +381,6 @@ export function SupplierManagement() {
     }
   };
 
-
   const columns: TableColumn<Supplier>[] = [
     { key: "code", label: "Mã NCC", width: "165px" },
     { key: "companyName", label: buildSortHeader("Tên NCC", "name") },
@@ -410,7 +423,7 @@ export function SupplierManagement() {
     },
   ];
 
-
+  // Hàm renderForm
   const renderForm = () => (
     <div className={styles.form}>
       <div className={styles.formRow}>

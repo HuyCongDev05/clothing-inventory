@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "../Modal/Modal";
 import { Button } from "../Button/Button";
 import { getUserById, type UserResponse } from "../../services/auth";
+import { formatDateTime } from "../../utils/formatters";
 import styles from "./UserDetailModal.module.css";
 
 interface UserDetailModalProps {
@@ -17,21 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
   "store-keeper": "Thủ kho",
 };
 
-function formatDateTime(dateStr?: string): string {
-  if (!dateStr) return "—";
-  try {
-    return new Date(dateStr).toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
+// Thành phần hiển thị chi tiết người dùng
 export function UserDetailModal({ userId, userName, onClose }: UserDetailModalProps) {
   const [prevUserId, setPrevUserId] = useState<string | null>(null);
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -88,7 +75,7 @@ export function UserDetailModal({ userId, userName, onClose }: UserDetailModalPr
 
       {user && !loading && (
         <>
-          {/* Avatar + tên */}
+          
           <div className={styles.avatarSection}>
             <div className={styles.avatar}>
               {user.fullName?.charAt(0)?.toUpperCase() ?? "?"}
@@ -108,7 +95,7 @@ export function UserDetailModal({ userId, userName, onClose }: UserDetailModalPr
             </div>
           </div>
 
-          {/* Chi tiết */}
+          
           <div className={styles.detail}>
             <div className={styles.detailRow}>
               <span className={styles.detailKey}>Email</span>
@@ -144,5 +131,4 @@ export function UserDetailModal({ userId, userName, onClose }: UserDetailModalPr
     </Modal>
   );
 }
-
 

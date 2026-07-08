@@ -25,8 +25,8 @@ public class AuthController {
     private final CacheService cacheService;
 
     @GetMapping("/me")
-    public ResponseEntity<AuthResponseDto.Me> me(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().body(authService.me(jwt.getSubject()));
+    public ResponseEntity<AuthResponseDto.Me> me(@AuthenticationPrincipal String uuid) {
+        return ResponseEntity.ok().body(authService.me(uuid));
     }
 
     @PostMapping("/login")

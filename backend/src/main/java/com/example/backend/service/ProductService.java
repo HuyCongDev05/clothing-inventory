@@ -65,7 +65,18 @@ public class ProductService {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
         Page<Product> productPage = productRepository.findAll(spec, pageable);
-        return PageResponseDto.from(productPage.map(productMapper::toResponse));
+
+        Page<ProductResponseDto> dtoPage = productPage.map(product -> {
+            ProductResponseDto responseDto = productMapper.toResponse(product);
+            responseDto.setVariants(
+                    responseDto.getVariants().stream()
+                            .filter(variant -> variant.getStatus() != Status.DELETED)
+                            .toList()
+            );
+            return responseDto;
+        });
+
+        return PageResponseDto.from(dtoPage);
     }
 
     public PageResponseDto<ProductVariantDetailResponseDto> getAllVariants(String keyword, Status status,

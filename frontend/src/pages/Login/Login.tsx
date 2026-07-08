@@ -8,6 +8,7 @@ import { ApiError } from "../../services/api";
 import { useToast } from "../../components/Toast/ToastContext";
 import styles from "./Login.module.css";
 
+// Trang đăng nhập
 export function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -21,6 +22,7 @@ export function Login() {
     }
   }, [navigate]);
 
+  // Xử lý submit
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {

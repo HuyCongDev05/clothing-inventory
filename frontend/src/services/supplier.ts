@@ -33,6 +33,7 @@ export interface PaginatedSuppliers {
   totalPages: number;
 }
 
+// Hàm mapBackendSupplierToFrontend
 export function mapBackendSupplierToFrontend(
   s: BackendSupplierResponse,
 ): Supplier {
@@ -47,12 +48,13 @@ export function mapBackendSupplierToFrontend(
     email: s.email,
     address: s.address,
     note: s.note || "",
-    status: s.status?.toLowerCase() === "active" ? "active" : "inactive",
+    status: (!s.status || s.status.toLowerCase() === "active") ? "active" : "inactive",
     createdAt: s.createdAt,
     updatedAt: s.updatedAt,
   };
 }
 
+// Lấy thông tin suppliers page
 export async function getSuppliersPage(
   page: number,
   keyword?: string,
@@ -78,11 +80,13 @@ export async function getSuppliersPage(
   };
 }
 
+// Lấy thông tin supplier by id
 export async function getSupplierById(id: string): Promise<Supplier> {
   const response = await apiFetch<ApiResponse<BackendSupplierResponse>>(`/suppliers/${id}`);
   return mapBackendSupplierToFrontend(response.data);
 }
 
+// Tạo mới supplier
 export async function createSupplier(
   form: SupplierFormData,
 ): Promise<Supplier> {
@@ -108,6 +112,7 @@ export async function createSupplier(
   return mapBackendSupplierToFrontend(response.data);
 }
 
+// Cập nhật supplier
 export async function updateSupplier(
   code: string,
   form: SupplierFormData,
@@ -135,6 +140,7 @@ export async function updateSupplier(
   return mapBackendSupplierToFrontend(response.data);
 }
 
+// Hàm patchSupplier
 export async function patchSupplier(
   code: string,
   partialFields: Partial<SupplierFormData>,
@@ -160,4 +166,10 @@ export async function patchSupplier(
   );
 
   return mapBackendSupplierToFrontend(response.data);
+}
+
+// Lấy toàn bộ danh sách nhà cung cấp
+export async function getSuppliersAll(): Promise<Supplier[]> {
+  const response = await apiFetch<ApiResponse<BackendSupplierResponse[]>>("/suppliers/all");
+  return response.data.map(mapBackendSupplierToFrontend);
 }

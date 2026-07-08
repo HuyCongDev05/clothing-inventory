@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useBlocker } from "react-router-dom";
 
+// Hook cảnh báo thay đổi chưa lưu
 export function useUnsavedChanges(isDirty: boolean) {
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -15,6 +16,8 @@ export function useUnsavedChanges(isDirty: boolean) {
 
   useEffect(() => {
     if (!isDirty) return;
+
+    // Xử lý before unload
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       // Cảnh báo khi reload/đóng tab

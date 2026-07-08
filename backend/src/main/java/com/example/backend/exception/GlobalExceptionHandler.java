@@ -13,6 +13,7 @@ import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -63,6 +64,12 @@ public class GlobalExceptionHandler implements ResponseBodyAdvice<Object> {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ResponseEntity<FormatMessageResponseDto<Void>> handleAccessDeniedException() {
         return formatException(HttpStatus.FORBIDDEN, "Access Denied");
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<FormatMessageResponseDto<Void>> handleDisabledException() {
+        return formatException(HttpStatus.FORBIDDEN, "Account is inactive");
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)

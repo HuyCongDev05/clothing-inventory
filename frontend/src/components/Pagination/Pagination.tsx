@@ -6,6 +6,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
+// Thành phần phân trang
 export function Pagination({ pagination, onPageChange }: PaginationProps) {
   const { page, pageSize, total } = pagination;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));

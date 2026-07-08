@@ -1,8 +1,6 @@
 import { apiFetch } from "./api";
 import type { ApiResponse } from "../types/common.types";
 
-
-
 // Phương thức thanh toán từ backend
 export interface BackendPaymentMethodResponse {
   id: number;
@@ -85,8 +83,7 @@ export interface PaymentCreateRequestDto {
   note?: string;
 }
 
-
-
+// Hàm mapBackendPaymentToFrontend
 function mapBackendPaymentToFrontend(p: BackendPaymentResponse): PaymentRecord {
   return {
     id: p.id,
@@ -106,6 +103,7 @@ function mapBackendPaymentToFrontend(p: BackendPaymentResponse): PaymentRecord {
   };
 }
 
+// Hàm mapBackendPaymentMethodToFrontend
 function mapBackendPaymentMethodToFrontend(
   m: BackendPaymentMethodResponse,
 ): PaymentMethod {
@@ -116,8 +114,6 @@ function mapBackendPaymentMethodToFrontend(
     status: m.status,
   };
 }
-
-
 
 // Lấy danh sách phương thức thanh toán
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {

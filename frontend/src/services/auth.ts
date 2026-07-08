@@ -185,6 +185,7 @@ export async function getUsersPage(
   };
 }
 
+// Lấy thông tin user by id
 export async function getUserById(id: string): Promise<UserResponse> {
   const response = await apiFetch<ApiResponse<UserResponse>>(`/users/${id}`);
   return response.data;

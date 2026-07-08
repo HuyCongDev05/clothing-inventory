@@ -2,6 +2,7 @@ package com.example.backend.security.detail;
 
 import com.example.backend.model.Role;
 import com.example.backend.model.User;
+import com.example.backend.model.enums.Status;
 import com.example.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,9 +28,14 @@ public class UserDetailService implements UserDetailsService {
         for (Role role : user.getRoles()) {
             authorities.add(new SimpleGrantedAuthority(role.getName()));
         }
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
+                user.getStatus() == Status.ACTIVE,
+                true,
+                true,
+                true,
                 authorities
         );
     }

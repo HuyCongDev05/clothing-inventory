@@ -9,6 +9,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
 }
 
+// Thành phần danh sách chọn
 export function Select({
   label,
   error,

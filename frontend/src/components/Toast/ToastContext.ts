@@ -10,6 +10,7 @@ export const ToastContext = createContext<ToastContextProps | undefined>(
   undefined,
 );
 
+// Hook useToast
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {

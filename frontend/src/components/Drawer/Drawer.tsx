@@ -8,6 +8,7 @@ interface DrawerProps {
   children: ReactNode;
 }
 
+// Thành phần ngăn kéo điều hướng
 export function Drawer({ isOpen, onClose, children }: DrawerProps) {
   useEffect(() => {
     if (isOpen) {

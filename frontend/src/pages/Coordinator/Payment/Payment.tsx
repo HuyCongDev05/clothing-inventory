@@ -29,6 +29,7 @@ const METHOD_OPTIONS: { value: PaymentMethod; label: string; icon: string }[] = 
   { value: "transfer", label: "Chuyển khoản", icon: "fi fi-rr-bank" },
 ];
 
+// Trang thanh toán hóa đơn
 export function Payment() {
   const { warehouseReceipts, updatePayment } = useWarehouseContext();
   const [selected, setSelected] = useState<WarehouseReceipt | null>(null);
@@ -48,6 +49,7 @@ export function Payment() {
     );
   }, [warehouseReceipts, searchQuery]);
 
+  // Hàm openDetail
   const openDetail = (row: WarehouseReceipt) => {
     setSelected(row);
     setPayMethod(row.paymentMethod);
@@ -58,6 +60,7 @@ export function Payment() {
     ? (warehouseReceipts.find((r) => r.id === selected.id) ?? selected)
     : null;
 
+  // Xử lý confirm payment
   const handleConfirmPayment = () => {
     if (!currentSelected) return;
     const amount = Math.min(Number(payAmount) || 0, currentSelected.remainingAmount);
