@@ -1,16 +1,10 @@
 package com.example.backend.util;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.backend.exception.ErrorCode;
-import com.example.backend.exception.InvalidException;
-import com.example.backend.model.User;
 import com.example.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
@@ -69,19 +63,6 @@ public class JwtUtil {
                 .build();
         JwsHeader jwsHeader = JwsHeader.with(macAlgorithm).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, jwtClaimsSet)).getTokenValue();
-    }
-
-    public String extractSubject(String token) {
-        DecodedJWT decodedJWT = JWT.decode(token);
-        return decodedJWT.getSubject();
-    }
-
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        User accounts = userService.findByUuid(extractSubject(token));
-        if (!accounts.getUsername().equals(userDetails.getUsername())) {
-            throw new InvalidException(ErrorCode.TOKEN_SUBJECT_MISMATCH);
-        }
-        return true;
     }
 
     public Jwt verifyToken(String token) {
