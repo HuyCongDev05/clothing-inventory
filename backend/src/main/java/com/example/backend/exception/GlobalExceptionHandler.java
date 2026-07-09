@@ -2,7 +2,9 @@ package com.example.backend.exception;
 
 import com.example.backend.dto.response.FormatMessageResponseDto;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.util.Objects;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler implements ResponseBodyAdvice<Object> {
     @Override
@@ -78,9 +81,16 @@ public class GlobalExceptionHandler implements ResponseBodyAdvice<Object> {
         return formatException(HttpStatus.NOT_FOUND, "Resource Not Found");
     }
 
+    @ExceptionHandler(CannotAcquireLockException.class)
+    public ResponseEntity<FormatMessageResponseDto<Void>> handleCannotAcquireLockException(CannotAcquireLockException ex) {
+        log.error("Database lock conflict / Deadlock detected: ", ex);
+        return formatException(HttpStatus.CONFLICT, "Hệ thống đang bận xử lý giao dịch khác trên cùng sản phẩm, vui lòng thử lại sau.");
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<FormatMessageResponseDto<Void>> handleException500() {
+    public ResponseEntity<FormatMessageResponseDto<Void>> handleException500(Exception ex) {
+        log.error("Unhandled internal server error: ", ex);
         return formatException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
     }
 

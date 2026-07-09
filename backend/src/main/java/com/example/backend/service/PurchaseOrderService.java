@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -191,6 +192,10 @@ public class PurchaseOrderService {
     private void receivePurchaseOrder(PurchaseOrder order) {
         User currentUser = getCurrentUser();
         List<PurchaseOrderDetail> details = purchaseOrderDetailRepository.findByPurchaseOrderId(order.getId());
+        
+        // Sort details by Variant ID to prevent deadlock during locking
+        details.sort(Comparator.comparing(detail -> detail.getVariant().getId()));
+        
         List<InventoryTransaction> transactions = new ArrayList<>();
 
         for (PurchaseOrderDetail detail : details) {
