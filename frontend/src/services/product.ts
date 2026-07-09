@@ -51,6 +51,7 @@ export interface ProductResponseDto {
   status: string;
   createdAt: string;
   updatedAt: string;
+  imageUrl?: string;
   variants?: VariantResponseDto[];
 }
 
@@ -148,7 +149,7 @@ export function mapBackendProductToFrontend(p: ProductResponseDto): Product {
     unit: p.unit || "Cái",
     stock: totalStock,
     description: p.description || "",
-    image: "",
+    image: p.imageUrl || "",
     createdAt: p.createdAt || "",
     updatedAt: p.updatedAt || "",
     brand: p.brand || "",
@@ -264,6 +265,7 @@ export interface ProductCreateRequestDto {
   option1Name: string | null;
   option2Name: string | null;
   option3Name: string | null;
+  imageUrl?: string;
   variants: VariantCreateRequestDto[];
 }
 

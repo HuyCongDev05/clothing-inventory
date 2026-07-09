@@ -168,6 +168,9 @@ export function CreateProduct() {
   const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
   const [isSubmitSuccessful, setIsSubmitSuccessful] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const isDirty = useMemo(() => {
     if (isSubmitSuccessful) return false;
     return (
@@ -482,6 +485,64 @@ export function CreateProduct() {
     });
   };
 
+  // Quản lý URL hiển thị tạm thời của ảnh và file thực tế
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+
+  // Giải phóng URL tạm thời tránh rò rỉ bộ nhớ
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl && imagePreviewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  // Xử lý chọn tệp tin ảnh từ thiết bị
+  const handleFileSelect = (file: File) => {
+    setSelectedImageFile(file);
+    const localUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(localUrl);
+  };
+
+  // Tải ảnh thực tế lên Cloudinary
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset || cloudName.includes("here") || uploadPreset.includes("here")) {
+      throw new Error("Chưa cấu hình Cloudinary trong tệp .env!");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Tải ảnh thất bại");
+    }
+
+    const result = await response.json();
+    return result.secure_url;
+  };
+
+  // Xử lý gỡ ảnh xem trước
+  const handleRemoveImage = () => {
+    setSelectedImageFile(null);
+    if (imagePreviewUrl && imagePreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setImagePreviewUrl("");
+  };
+
   // Xử lý submit
   const handleSubmit = async () => {
     const errs = validate(form as unknown as Record<string, string>, {
@@ -536,12 +597,25 @@ export function CreateProduct() {
       });
     }
 
+    let imageUrl = "";
+    if (selectedImageFile) {
+      setUploadingImage(true);
+      try {
+        imageUrl = await uploadToCloudinary(selectedImageFile);
+      } catch {
+        showToast("Không thể tải ảnh lên!", "error");
+        setUploadingImage(false);
+        return;
+      }
+    }
+
     const payload: ProductCreateRequestDto = {
       name: form.name,
       categoryId: Number(form.category),
       brand: form.brand || "SapoBrand",
       unit: form.unit,
       description: form.description || "",
+      imageUrl: imageUrl || undefined,
       option1Name,
       option2Name,
       option3Name,
@@ -562,6 +636,13 @@ export function CreateProduct() {
       setEditingVariantLabel(null);
       setErrors({});
 
+      // Xóa sạch ảnh
+      setSelectedImageFile(null);
+      if (imagePreviewUrl && imagePreviewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      setImagePreviewUrl("");
+
       setIsSubmitSuccessful(true);
     } catch (err) {
       console.error("Failed to create product:", err);
@@ -570,6 +651,8 @@ export function CreateProduct() {
           ? err.message
           : "Không thể tạo sản phẩm. Vui lòng thử lại!";
       showToast(errMsg, "error");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -583,6 +666,14 @@ export function CreateProduct() {
     setRemovedVariantLabels(new Set());
     setEditingVariantLabel(null);
     setErrors({});
+
+    // Dọn dẹp tệp ảnh đã chọn
+    setSelectedImageFile(null);
+    if (imagePreviewUrl && imagePreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setImagePreviewUrl("");
+
     showToast("Đã xóa trắng tất cả các trường thông tin", "success");
   };
 
@@ -967,13 +1058,47 @@ export function CreateProduct() {
             <Card>
               <CardHeader title="Hình ảnh" />
               <CardBody>
-                <div className={styles.imageUpload}>
-                  <i className="fi fi-rr-picture" aria-hidden />
-                  <p>Kéo thả hoặc chọn hình ảnh</p>
-                  <Button variant="secondary" size="sm" icon="fi fi-rr-upload">
-                    Tải lên
-                  </Button>
-                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file);
+                  }}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                />
+
+                {uploadingImage ? (
+                  <div className={styles.imageUploadLoading}>
+                    <i className="fi fi-rr-spinner spinner" style={{ animation: "spin 1s linear infinite" }} />
+                    <p>Đang tải ảnh lên...</p>
+                  </div>
+                ) : imagePreviewUrl ? (
+                  <div className={styles.imagePreviewContainer}>
+                    <img src={imagePreviewUrl} alt="Sản phẩm" className={styles.imagePreview} />
+                    <button
+                      type="button"
+                      className={styles.removeImageBtn}
+                      onClick={handleRemoveImage}
+                      title="Xóa ảnh"
+                    >
+                      <i className="fi fi-rr-trash" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={styles.imageUpload}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <i className="fi fi-rr-picture" aria-hidden />
+                    <p>Chọn hình ảnh cho sản phẩm</p>
+                    <Button variant="secondary" size="sm" icon="fi fi-rr-upload" type="button">
+                      Tải lên
+                    </Button>
+                  </div>
+                )}
               </CardBody>
             </Card>
 
