@@ -3,6 +3,7 @@ import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar/Sidebar";
 import { Header } from "./Header/Header";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { Chatbot } from "../../components/Chatbot/Chatbot";
 import {
   isAuthenticated,
   getCurrentUser,
@@ -62,6 +63,9 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Trợ lý ảo Kho AI (Chatbot widget) - Khả dụng cho tất cả các vai trò */}
+      <Chatbot />
     </div>
   );
 }

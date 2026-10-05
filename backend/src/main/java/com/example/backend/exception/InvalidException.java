@@ -10,4 +10,9 @@ public class InvalidException extends RuntimeException {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
+
+    public InvalidException(ErrorCode errorCode, String customMessage) {
+        super(customMessage);
+        this.errorCode = errorCode;
+    }
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import styles from "./Dashboard.module.css";
+import { InventoryCharts } from "./InventoryCharts/InventoryCharts";
+import { WarehouseCapacityWidget } from "../../components/WarehouseCapacityWidget/WarehouseCapacityWidget";
 import { Card, CardBody, CardHeader } from "../../components/Card/Card";
 import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { getLowStockVariantsPage } from "../../services/product";
@@ -92,7 +94,7 @@ function toIsoLocal(dateStr: string, endOfDay: boolean): string {
 // Trang thống kê Dashboard
 export function Dashboard() {
   const authorities = getUserAuthorities();
-  const isAdmin = authorities.includes("admin");
+  const isAdmin = authorities.includes("admin") || authorities.includes("ROLE_ADMIN");
   const { showToast } = useToast();
 
   // Thống kê
@@ -137,8 +139,8 @@ export function Dashboard() {
     return () => clearTimeout(t);
   }, [lowStockKeyword]);
 
-  // Load dashboard stats từ API
-  useEffect(() => {
+  // Hàm load dashboard stats từ API
+  const fetchDashboardStats = () => {
     if (!isAdmin) return;
     getDashboardStats()
       .then((res) => {
@@ -154,6 +156,10 @@ export function Dashboard() {
         setSupplierCount(0);
         setTotalStock(0);
       });
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
   }, [isAdmin]);
 
   // Load low-stock variants từ API
@@ -406,6 +412,10 @@ export function Dashboard() {
             </Card>
           ))}
         </div>
+        <div style={{ marginTop: "var(--space-4)" }}>
+          <WarehouseCapacityWidget onUpdated={fetchDashboardStats} />
+        </div>
+        <InventoryCharts />
 
         <div className={styles.content}>
           

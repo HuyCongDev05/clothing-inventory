@@ -21,6 +21,7 @@ import {
   updatePurchaseOrderStatus,
 } from "../../../services/purchaseOrder";
 import type { PurchaseOrderCreateRequestDto } from "../../../services/purchaseOrder";
+import { ApiError } from "../../../services/api";
 import { formatCurrency, formatDateTime } from "../../../utils/formatters";
 import type { TableColumn } from "../../../types/common.types";
 import type { PurchaseOrder } from "../../../types/purchaseOrder.types";
@@ -624,8 +625,20 @@ export function PurchaseOrderPage() {
       setDetailOrder(null);
       triggerRefresh();
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Không thể cập nhật trạng thái";
+      let msg = "Không thể cập nhật trạng thái đơn hàng";
+      if (err instanceof ApiError) {
+        msg = err.message || msg;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+
+      if (
+        msg.includes("Warehouse capacity exceeded") ||
+        msg.includes("WAREHOUSE_CAPACITY_EXCEEDED")
+      ) {
+        msg = "Số lượng hàng nhập vượt quá sức chứa tối đa của kho hàng!";
+      }
+
       showToast(msg, "error");
     }
   };

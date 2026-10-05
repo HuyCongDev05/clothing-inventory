@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mục 3.4.3 (Phần 1): Luồng Quản lý Thanh toán & Đối soát Công nợ NCC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #0f172a;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 24px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header-bar {
+      width: 100%;
+      max-width: 1360px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .title-box h1 {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-box p {
+      font-size: 12.5px;
+      color: #475569;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-dark {
+      border: 1.5px solid #0f172a;
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .btn-dark:hover { background: #334155; }
+
+    .btn-outline {
+      border: 1.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+    }
+    .btn-outline:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    .master-container {
+      width: 100%;
+      max-width: 1360px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-header h2 {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Fira Code', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+
+    .svg-container {
+      width: 100%;
+      overflow-x: auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .notes-box {
+      margin-top: 14px;
+      background: #f8fafc;
+      border-left: 3.5px solid #0f172a;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    @media print {
+      body { padding: 0; }
+      .header-bar, .controls-group { display: none; }
+      .section-card { border: none; box-shadow: none; padding: 0; margin-bottom: 30px; page-break-inside: avoid; }
+      .svg-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header-bar">
+    <div class="title-box">
+      <h1>3.4.3 (Phần 1): Luồng Quản lý Thanh toán & Đối soát Công nợ Nhà cung cấp</h1>
+      <p>Hệ thống Quản lý Kho Thời trang • Reconciliation Engine & Khóa bi quan Row Lock (OMG UML 2.5)</p>
+    </div>
+    <div class="controls-group">
+      <a href="#section-usecase" class="btn btn-outline">1. Sơ đồ Use Case</a>
+      <a href="#section-architecture" class="btn btn-outline">2. Sơ đồ Kiến trúc (Tối giản)</a>
+      <a href="#section-sequence" class="btn btn-outline">3. Sơ đồ Tuần tự UML</a>
+      <a href="ai-chatbot-flow.html" class="btn btn-outline">Xem Luồng AI Chatbot ➔</a>
+      <button class="btn btn-dark" onclick="window.print()">In / Xuất PDF (Ctrl+P)</button>
+    </div>
+  </header>
+
+  <main class="master-container">
+
+    <!-- PHẦN 1: USE CASE -->
+    <section class="section-card" id="section-usecase">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.3.A: Sơ đồ Use Case Phân hệ Thanh toán &amp; Đối soát Công nợ (OMG UML 2.5)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Tác nhân Điều phối viên, ca sử dụng Lập phiếu chi, Khóa dòng đơn hàng và Phân nhánh kiểm tra nợ</p>
+        </div>
+        <span class="badge">OMG UML 2.5</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1040" height="420" viewBox="0 0 1040 420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="uc-arrow3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="#334155" stroke-width="1.5" />
+            </marker>
+          </defs>
+
+          <rect x="230" y="25" width="770" height="370" rx="8" fill="#ffffff" stroke="#334155" stroke-width="1.8" />
+          <rect x="230" y="25" width="460" height="28" fill="#f1f5f9" stroke="#334155" stroke-width="1.8" />
+          <text x="245" y="44" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">«subsystem» Quản lý Thanh toán &amp; Công nợ Đơn hàng</text>
+
+          <g transform="translate(50, 140)">
+            <circle cx="45" cy="18" r="13" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="31" x2="45" y2="65" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="18" y1="42" x2="72" y2="42" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="22" y2="95" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="68" y2="95" stroke="#0f172a" stroke-width="1.8" />
+            <text x="45" y="115" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">Điều phối viên</text>
+            <text x="45" y="130" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">(Coordinator/Finance)</text>
+          </g>
+
+          <ellipse cx="400" cy="190" rx="125" ry="32" fill="#f8fafc" stroke="#0f172a" stroke-width="1.8" />
+          <text x="400" y="186" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">UC-08: Lập Phiếu chi</text>
+          <text x="400" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">Thanh toán Đơn PO</text>
+
+          <ellipse cx="750" cy="100" rx="135" ry="26" fill="#ffffff" stroke="#475569" stroke-width="1.6" />
+          <text x="750" y="96" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#0f172a">Khóa Bi quan Đơn hàng (Row Lock)</text>
+          <text x="750" y="111" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#64748b">(findByIdForUpdate chống thanh toán kép)</text>
+
+          <ellipse cx="750" cy="190" rx="135" ry="28" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+          <text x="750" y="186" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a">Tính Tổng Đã trả &amp; Cập nhật Cờ PO</text>
+          <text x="750" y="201" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#475569">(Auto Set PARTIAL hoặc PAID)</text>
+
+          <ellipse cx="750" cy="285" rx="135" ry="28" fill="#ffffff" stroke="#b91c1c" stroke-width="1.6" />
+          <text x="750" y="281" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#b91c1c">Cảnh báo Trả Vượt Nợ Còn lại</text>
+          <text x="750" y="296" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#dc2626">(InvalidException - Overpayment)</text>
+
+          <ellipse cx="400" cy="320" rx="120" ry="26" fill="#f8fafc" stroke="#475569" stroke-width="1.6" />
+          <text x="400" y="324" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#0f172a">Xem Lịch sử Các đợt Chi trả</text>
+
+          <line x1="140" y1="190" x2="275" y2="190" stroke="#0f172a" stroke-width="1.6" />
+          <line x1="140" y1="210" x2="280" y2="315" stroke="#475569" stroke-width="1.4" />
+
+          <line x1="515" y1="170" x2="620" y2="120" stroke="#475569" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow3)" />
+          <rect x="545" y="130" width="65" height="16" fill="#ffffff" />
+          <text x="547" y="142" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#334155">«include»</text>
+
+          <line x1="525" y1="190" x2="615" y2="190" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow3)" />
+          <rect x="545" y="182" width="65" height="16" fill="#ffffff" />
+          <text x="547" y="194" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#0f172a">«include»</text>
+
+          <line x1="625" y1="270" x2="515" y2="210" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow3)" />
+          <rect x="545" y="235" width="62" height="16" fill="#ffffff" />
+          <text x="548" y="247" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#b91c1c">«extend»</text>
+          <text x="550" y="265" font-family="'Plus Jakarta Sans', sans-serif" font-size="8.5" font-style="italic" fill="#b91c1c">Point: {amount &gt; rem}</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- PHẦN 2: KIẾN TRÚC & PIPELINE -->
+    <section class="section-card" id="section-architecture">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.3.B: Sơ đồ Kiến trúc 3 Tầng &amp; Quy trình Đối soát Tự động Công nợ (Tối giản)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Hiện thực hóa Reconciliation Engine và chuyển dịch trạng thái UNPAID ➔ PARTIAL ➔ PAID</p>
+        </div>
+        <span class="badge">Architecture &amp; Pipeline</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1200" height="390" viewBox="0 0 1200 390" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="pipe-arrow3b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="#0f172a" stroke-width="1.6" />
+            </marker>
+          </defs>
+
+          <!-- 3 TIERS TOP -->
+          <rect x="20" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="20" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="35" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">1. CLIENT TIER (REACT SPA)</text>
+
+          <rect x="35" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="45" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Form Lập Phiếu Chi:</text>
+          <text x="180" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Chọn PO, nhập tiền, hình thức trả</text>
+
+          <rect x="35" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="45" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Lịch sử Đợt Chi Trả:</text>
+          <text x="175" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Danh sách đợt thanh toán &amp; người lập</text>
+
+          <rect x="35" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="45" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Badge Công Nợ:</text>
+          <text x="160" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#334155">Trực quan: UNPAID, PARTIAL, PAID</text>
+
+          <!-- TIER 2 -->
+          <rect x="420" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="420" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="435" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">2. SERVICE TIER (@TRANSACTIONAL)</text>
+
+          <rect x="435" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="445" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Pessimistic Lock PO:</text>
+          <text x="590" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#b91c1c">findByIdForUpdate() khóa đơn</text>
+
+          <rect x="435" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Tính Tổng Lũy Kế:</text>
+          <text x="580" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">sumAmountByPurchaseOrderId()</text>
+
+          <rect x="435" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Kiểm Tra Vượt Hạn:</text>
+          <text x="585" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">amount &lt;= remainingAmount</text>
+
+          <!-- TIER 3 -->
+          <rect x="820" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="820" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="835" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">3. DATABASE TIER (MYSQL STORAGE)</text>
+
+          <rect x="835" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="845" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Bảng payments:</text>
+          <text x="965" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Lưu đợt chi: amount, payment_date</text>
+
+          <rect x="835" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="845" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Bảng purchase_orders:</text>
+          <text x="1005" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#15803d">payment_status</text>
+
+          <rect x="835" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="845" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• payment_methods:</text>
+          <text x="980" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Tiền mặt, Chuyển khoản...</text>
+
+          <line x1="380" y1="95" x2="420" y2="95" stroke="#0f172a" stroke-width="1.5" marker-end="url(#pipe-arrow3b)" />
+          <line x1="780" y1="95" x2="820" y2="95" stroke="#0f172a" stroke-width="1.5" marker-end="url(#pipe-arrow3b)" />
+
+          <!-- PIPELINE DƯỚI -->
+          <g transform="translate(20, 200)">
+            <rect x="0" y="0" width="1160" height="150" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.4" />
+            <rect x="0" y="0" width="1160" height="28" fill="#e2e8f0" />
+            <text x="15" y="18" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a">QUY TRÌNH ĐỐI SOÁT &amp; CẬP NHẬT TRẠNG THÁI CÔNG NỢ TỰ ĐỘNG</text>
+            <text x="840" y="18" font-family="'Fira Code', monospace" font-size="10" font-weight="700" fill="#334155">POST /api/v1/payments ➔ SUM(amount) ➔ Status</text>
+
+            <rect x="20" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="30" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">1. Lập Phiếu Chi</text>
+            <text x="30" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Nhập số tiền chi trả cho NCC</text>
+            <text x="30" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">amount, paymentMethodId</text>
+
+            <text x="232" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="255" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="265" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">2. Ghi Bản Ghi</text>
+            <text x="265" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Backend lưu bảng payments</text>
+            <text x="265" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">paymentRepository.save()</text>
+
+            <text x="467" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="490" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="500" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">3. Tính Tổng (SUM)</text>
+            <text x="500" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Truy vấn tổng các đợt đã trả</text>
+            <text x="500" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">sumAmountByPurchaseOrderId()</text>
+
+            <text x="702" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="725" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="735" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">4. Đối Soát Công Nợ</text>
+            <text x="735" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">So sánh tổng trả với total_amount</text>
+            <text x="735" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">rem = totalAmount - paid</text>
+
+            <text x="937" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="960" y="45" width="180" height="85" rx="5" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+            <text x="970" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#15803d">5. Cập Nhật Cờ PO</text>
+            <text x="970" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#ca8a04">• Trả 1 phần ➔ PARTIAL</text>
+            <text x="970" y="104" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#15803d">• Đã trả đủ ➔ PAID</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- PHẦN 3: SEQUENCE -->
+    <section class="section-card" id="section-sequence">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.3.C: Sơ đồ Tuần tự Chi tiết Quy trình Thanh toán &amp; Đối soát Công nợ (OMG UML 2.5)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Tái hiện chính xác 23 bước: Khóa đơn hàng findByIdForUpdate, kiểm tra số dư nợ, phân nhánh Alt và Rollback</p>
+        </div>
+        <span class="badge">OMG UML 2.5 Sequence Diagram</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1260" height="1060" viewBox="0 0 1260 1060" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="seq-sync3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9 Z" fill="#0f172a" />
+            </marker>
+            <marker id="seq-reply3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#0f172a" stroke-width="1.4" />
+            </marker>
+            <marker id="seq-reply-red3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#b91c1c" stroke-width="1.4" />
+            </marker>
+          </defs>
+
+          <!-- PARTICIPANTS -->
+          <g transform="translate(45, 15)">
+            <circle cx="40" cy="16" r="12" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="28" x2="40" y2="52" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="20" y1="36" x2="60" y2="36" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="52" x2="24" y2="76" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="52" x2="56" y2="76" stroke="#0f172a" stroke-width="1.8" />
+            <text x="40" y="94" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:Coordinator</u></text>
+            <line x1="40" y1="102" x2="40" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(200, 45)">
+            <rect x="0" y="0" width="160" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="80" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«boundary»</text>
+            <text x="80" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:PaymentModalUI</u></text>
+            <line x1="80" y1="42" x2="80" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(440, 45)">
+            <rect x="0" y="0" width="170" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="85" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«control»</text>
+            <text x="85" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:PaymentController</u></text>
+            <line x1="85" y1="42" x2="85" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(690, 45)">
+            <rect x="0" y="0" width="160" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="80" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«service»</text>
+            <text x="80" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:PaymentService</u></text>
+            <line x1="80" y1="42" x2="80" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(930, 45)">
+            <rect x="0" y="0" width="180" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="90" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«repository»</text>
+            <text x="90" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:Payment &amp; :PORepo</u></text>
+            <line x1="90" y1="42" x2="90" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(1160, 45)">
+            <rect x="0" y="0" width="90" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="45" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«database»</text>
+            <text x="45" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:MySQL</u></text>
+            <line x1="45" y1="42" x2="45" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- CALLS -->
+          <rect x="80" y="115" width="10" height="50" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="90" y1="125" x2="274" y2="125" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="100" y="120" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">1: submitPayment(poId, methodId, amount, note)</text>
+
+          <rect x="274" y="125" width="12" height="770" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="286" y1="145" x2="519" y2="145" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="300" y="140" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">2: POST /api/v1/payments [PaymentRequestDto]</text>
+
+          <rect x="519" y="145" width="12" height="740" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="531" y1="170" x2="764" y2="170" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="545" y="165" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">3: createPayment(request) [@Transactional]</text>
+
+          <rect x="764" y="170" width="12" height="700" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+
+          <line x1="776" y1="190" x2="1014" y2="190" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="790" y="185" font-family="'Fira Code', monospace" font-size="9" font-weight="700" fill="#0f172a">4: purchaseOrderRepository.findByIdForUpdate(poId)</text>
+
+          <rect x="1014" y="190" width="12" height="40" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1026" y1="205" x2="1200" y2="205" stroke="#b91c1c" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="1035" y="200" font-family="'Fira Code', monospace" font-size="8.5" fill="#b91c1c">5: SELECT * FROM purchase_orders WHERE id = ? FOR UPDATE</text>
+
+          <line x1="1200" y1="225" x2="776" y2="225" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply3b)" />
+          <text x="800" y="220" font-family="'Fira Code', monospace" font-size="9" fill="#475569">6: return locked PurchaseOrder entity</text>
+
+          <line x1="776" y1="250" x2="1014" y2="250" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="790" y="245" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">7: paymentRepository.sumAmountByPurchaseOrderId(poId)</text>
+
+          <rect x="1014" y="250" width="12" height="40" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1026" y1="265" x2="1200" y2="265" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="1035" y="260" font-family="'Fira Code', monospace" font-size="8.2" fill="#0f172a">8: SELECT COALESCE(SUM(amount), 0) FROM payments WHERE ...</text>
+
+          <line x1="1014" y1="285" x2="776" y2="285" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply3b)" />
+          <text x="800" y="280" font-family="'Fira Code', monospace" font-size="9" fill="#475569">9: return totalPaidAmount (BigDecimal)</text>
+
+          <path d="M 776 305 L 815 305 L 815 325 L 776 325" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="318" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">10: remainingAmount = totalAmount.subtract(totalPaidAmount)</text>
+
+          <!-- ALT -->
+          <rect x="500" y="340" width="730" height="520" fill="none" stroke="#0f172a" stroke-width="1.6" />
+          <path d="M 500 340 L 540 340 L 550 352 L 550 360 L 500 360 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" />
+          <text x="507" y="353" font-family="'Fira Code', monospace" font-size="10" font-weight="800" fill="#0f172a">alt</text>
+          <text x="560" y="353" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="800" fill="#b91c1c">[amount &gt; remainingAmount: Exceeds Debt Balance]</text>
+
+          <path d="M 776 380 L 815 380 L 815 400 L 776 400" fill="none" stroke="#b91c1c" stroke-width="1.3" />
+          <text x="825" y="393" font-family="'Fira Code', monospace" font-size="8.8" fill="#b91c1c">11: throw InvalidException(PAYMENT_AMOUNT_EXCEEDS_REMAINING)</text>
+
+          <line x1="764" y1="415" x2="531" y2="415" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red3b)" />
+          <text x="550" y="410" font-family="'Fira Code', monospace" font-size="9" font-weight="700" fill="#b91c1c">12: return 400 Bad Request ("Số tiền trả vượt quá nợ còn lại!")</text>
+
+          <line x1="519" y1="435" x2="80" y2="435" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red3b)" />
+          <text x="100" y="430" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="700" fill="#b91c1c">13: displayErrorToast("Số tiền thanh toán không hợp lệ")</text>
+
+          <line x1="500" y1="465" x2="1230" y2="465" stroke="#475569" stroke-width="1.4" stroke-dasharray="6 4" />
+          <text x="510" y="485" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="800" fill="#15803d">[else: amount &lt;= remainingAmount - Payment Valid]</text>
+
+          <line x1="776" y1="510" x2="1014" y2="510" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="790" y="505" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">14: paymentRepository.save(payment)</text>
+
+          <rect x="1014" y="510" width="12" height="40" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1026" y1="525" x2="1200" y2="525" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="1035" y="520" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">15: INSERT INTO payments (...) VALUES (...)</text>
+
+          <line x1="1014" y1="545" x2="776" y2="545" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply3b)" />
+          <text x="800" y="540" font-family="'Fira Code', monospace" font-size="9" fill="#475569">16: return savedPayment entity</text>
+
+          <path d="M 776 570 L 815 570 L 815 590 L 776 590" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="583" font-family="'Fira Code', monospace" font-size="8.8" fill="#0f172a">17: updatedRemaining = totalAmount.subtract(updatedPaid)</text>
+
+          <rect x="520" y="605" width="690" height="150" fill="none" stroke="#334155" stroke-width="1.4" />
+          <path d="M 520 605 L 555 605 L 565 617 L 565 625 L 520 625 Z" fill="#e2e8f0" stroke="#334155" stroke-width="1.4" />
+          <text x="527" y="618" font-family="'Fira Code', monospace" font-size="9.5" font-weight="800" fill="#0f172a">alt</text>
+          <text x="575" y="618" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#15803d">[updatedRemaining == 0: Fully Paid]</text>
+
+          <path d="M 776 635 L 815 635 L 815 655 L 776 655" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="648" font-family="'Fira Code', monospace" font-size="8.5" fill="#15803d">18: order.setPaymentStatus(PurchaseOrderPaymentStatus.PAID)</text>
+
+          <line x1="520" y1="675" x2="1210" y2="675" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          <text x="530" y="692" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#ca8a04">[else: updatedRemaining &gt; 0: Partially Paid]</text>
+
+          <path d="M 776 705 L 815 705 L 815 725 L 776 725" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="718" font-family="'Fira Code', monospace" font-size="8.5" fill="#ca8a04">19: order.setPaymentStatus(PurchaseOrderPaymentStatus.PARTIAL)</text>
+
+          <line x1="776" y1="775" x2="1200" y2="775" stroke="#15803d" stroke-width="1.5" marker-end="url(#seq-sync3b)" />
+          <text x="790" y="770" font-family="'Fira Code', monospace" font-size="9" font-weight="700" fill="#15803d">20: UPDATE purchase_orders SET payment_status = ? WHERE id = ?</text>
+
+          <line x1="764" y1="805" x2="531" y2="805" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply3b)" />
+          <text x="545" y="800" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">21: return PaymentResponseDto(paid, remaining, status)</text>
+
+          <line x1="519" y1="835" x2="286" y2="835" stroke="#15803d" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply3b)" />
+          <text x="300" y="830" font-family="'Fira Code', monospace" font-size="9" font-weight="700" fill="#15803d">22: return 201 Created (Payment Saved Successfully)</text>
+
+          <line x1="274" y1="865" x2="45" y2="865" stroke="#15803d" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply3b)" />
+          <text x="55" y="860" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="700" fill="#15803d">23: displaySuccessModal("Đã thanh toán! Trạng thái: PARTIAL / PAID")</text>
+
+          <rect x="80" y="865" width="10" height="25" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+        </svg>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="margin-top: 36px; text-align: center; font-size: 12px; color: #64748b; padding-bottom: 24px;">
+    Đồ án Tốt nghiệp: Hệ thống Quản lý Tồn kho & Mua hàng Thời trang • Bản chuẩn OMG UML 2.5
+  </footer>
+
+</body>
+</html>

@@ -40,6 +40,14 @@ const router = createBrowserRouter([
         element: <ProductList />,
       },
       {
+        path: ROUTES.PRODUCTS,
+        element: <ProductList />,
+      },
+      {
+        path: ROUTES.PRODUCT_DETAIL,
+        element: <ProductList />,
+      },
+      {
         path: ROUTES.WAREHOUSE_CREATE_PRODUCT,
         element: <CreateProduct />,
       },

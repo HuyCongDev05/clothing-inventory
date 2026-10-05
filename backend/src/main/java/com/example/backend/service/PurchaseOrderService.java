@@ -44,6 +44,7 @@ public class PurchaseOrderService {
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final PurchaseOrderDetailMapper purchaseOrderDetailMapper;
     private final CacheService cacheService;
+    private final SystemSettingService systemSettingService;
 
     public PageResponseDto<PurchaseOrderResponseDto> getAllPurchaseOrders(String keyword, PurchaseOrderStatus status,
             LocalDateTime fromDate, LocalDateTime toDate, Long supplierId, Pageable pageable) {
@@ -191,6 +192,13 @@ public class PurchaseOrderService {
     private void receivePurchaseOrder(PurchaseOrder order) {
         User currentUser = getCurrentUser();
         List<PurchaseOrderDetail> details = purchaseOrderDetailRepository.findByPurchaseOrderId(order.getId());
+
+        // Kiểm tra sức chứa tối đa kho trước khi cho phép nhập hàng
+        long totalIncoming = details.stream()
+                .mapToLong(d -> d.getQuantity() != null ? d.getQuantity() : 0L)
+                .sum();
+        systemSettingService.validateCapacityForInbound(totalIncoming);
+
         List<InventoryTransaction> transactions = new ArrayList<>();
 
         for (PurchaseOrderDetail detail : details) {

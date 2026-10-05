@@ -36,10 +36,26 @@ export function Login() {
     } catch (err: unknown) {
       let errorMessage = "Đăng nhập thất bại. Vui lòng thử lại!";
       if (err instanceof ApiError) {
-        if (err.message === "Account is inactive") {
+        const msg = (err.message || "").toLowerCase();
+        const dataStatusCode = (err.data as Record<string, unknown>)?.statusCode;
+        const code = typeof dataStatusCode === "number" ? dataStatusCode : err.status;
+
+        if (
+          msg.includes("account is inactive") ||
+          msg.includes("inactive") ||
+          msg.includes("chưa được mở khóa")
+        ) {
           errorMessage = "Tài khoản chưa được mở khóa";
-        } else if (err.status === 401) {
+        } else if (
+          code === 401 ||
+          msg.includes("wrong username or password") ||
+          msg.includes("bad credentials") ||
+          msg.includes("sai tài khoản") ||
+          msg.includes("mật khẩu")
+        ) {
           errorMessage = "Sai tài khoản hoặc mật khẩu";
+        } else if (err.message && !err.message.startsWith("HTTP error")) {
+          errorMessage = err.message;
         } else {
           errorMessage = "Máy chủ gặp lỗi";
         }

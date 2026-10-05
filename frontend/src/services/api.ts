@@ -160,6 +160,7 @@ export async function apiFetch<T>(
 
     let errorData: unknown = null;
     let errorMessage = `HTTP error! Status: ${response.status}`;
+    let statusCode = response.status;
 
     try {
       const text = await response.text();
@@ -172,6 +173,11 @@ export async function apiFetch<T>(
           } else if (typeof errObj.error === "string") {
             errorMessage = errObj.error;
           }
+          if (typeof errObj.statusCode === "number") {
+            statusCode = errObj.statusCode;
+          } else if (typeof errObj.status === "number") {
+            statusCode = errObj.status;
+          }
         }
       }
     } catch {
@@ -180,7 +186,7 @@ export async function apiFetch<T>(
 
     // Tài khoản bị vô hiệu hóa → buộc đăng xuất
     if (
-      response.status === 400 &&
+      (statusCode === 400 || response.status === 400) &&
       typeof errorMessage === "string" &&
       errorMessage.toLowerCase().includes("account is inactive")
     ) {
@@ -188,15 +194,23 @@ export async function apiFetch<T>(
       throw new ApiError(errorMessage, 400, errorData);
     }
 
-    throw new ApiError(errorMessage, response.status, errorData);
+    throw new ApiError(errorMessage, statusCode, errorData);
   }
 
   // Trả về JSON nếu có
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {
     try {
-      return (await response.json()) as T;
-    } catch {
+      const body = await response.json();
+      if (body && typeof body === "object" && (body as Record<string, unknown>).success === false) {
+        const errObj = body as Record<string, unknown>;
+        const errorMsg = typeof errObj.message === "string" ? errObj.message : "Request failed";
+        const code = typeof errObj.statusCode === "number" ? errObj.statusCode : (typeof errObj.status === "number" ? errObj.status : 400);
+        throw new ApiError(errorMsg, code, body);
+      }
+      return body as T;
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
       return {} as T;
     }
   }

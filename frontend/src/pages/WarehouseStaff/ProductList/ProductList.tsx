@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import type {
   Product,
   Variant,
@@ -149,34 +150,35 @@ export function ProductList() {
   const [pageSize, setPageSize] = useState(10);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-
   const [sortBy, setSortBy] = useState<"name" | "brand" | "createdAt" | "updatedAt">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  // Trạng thái xác nhận xóa
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [deleteVariantId, setDeleteVariantId] = useState<string | null>(null);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
 
-  // Trạng thái tab trong modal "Chi tiết phiên bản"
   const [activeVariantTab, setActiveVariantTab] = useState<"info" | "history">("info");
 
-  // Trạng thái lịch sử giao dịch kho của phiên bản
   const [txHistory, setTxHistory] = useState<InventoryTransactionDto[]>([]);
   const [txPage, setTxPage] = useState(1);
   const [txTotalElements, setTxTotalElements] = useState(0);
   const [txPageSize, setTxPageSize] = useState(10);
   const [txLoading, setTxLoading] = useState(false);
 
-  // Modal chi tiết đơn đặt hàng khi click vào mã PO trong bảng transaction
   const [poDetail, setPoDetail] = useState<PurchaseOrder | null>(null);
   const [poDetailLoading, setPoDetailLoading] = useState(false);
 
   const { showToast } = useToast();
 
-  // Debounce tìm kiếm
+  const { id: paramProductId } = useParams<{ id?: string }>();
+  const [searchQuery, setSearchQuery] = useState(paramProductId || "");
+  const [prevParamId, setPrevParamId] = useState(paramProductId);
+  if (paramProductId !== prevParamId) {
+    setPrevParamId(paramProductId);
+    setSearchQuery(paramProductId || "");
+  }
+  const [debouncedQuery, setDebouncedQuery] = useState(paramProductId || "");
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);

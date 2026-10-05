@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mục 3.4.1: Luồng Xác thực, Ủy quyền & Tự động làm mới phiên ngầm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #0f172a;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 24px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* HEADER */
+    .header-bar {
+      width: 100%;
+      max-width: 1360px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .title-box h1 {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-box p {
+      font-size: 12.5px;
+      color: #475569;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-dark {
+      border: 1.5px solid #0f172a;
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .btn-dark:hover { background: #334155; }
+
+    .btn-outline {
+      border: 1.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+    }
+    .btn-outline:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    /* CONTAINER */
+    .master-container {
+      width: 100%;
+      max-width: 1360px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-header h2 {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Fira Code', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+
+    .svg-container {
+      width: 100%;
+      overflow-x: auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .notes-box {
+      margin-top: 14px;
+      background: #f8fafc;
+      border-left: 3.5px solid #0f172a;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    @media print {
+      body { padding: 0; }
+      .header-bar, .controls-group { display: none; }
+      .section-card { border: none; box-shadow: none; padding: 0; margin-bottom: 30px; page-break-inside: avoid; }
+      .svg-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header-bar">
+    <div class="title-box">
+      <h1>3.4.1. Luồng Xác thực, Ủy quyền & Tự động làm mới phiên ngầm</h1>
+      <p>Hệ thống Quản lý Kho Thời trang • Mô hình Stateless Dual-Token (OMG UML 2.5 & Kiến trúc Tối giản)</p>
+    </div>
+    <div class="controls-group">
+      <a href="#section-usecase" class="btn btn-outline">1. Sơ đồ Use Case</a>
+      <a href="#section-architecture" class="btn btn-outline">2. Sơ đồ Kiến trúc (Tối giản)</a>
+      <a href="#section-sequence" class="btn btn-outline">3. Sơ đồ Tuần tự UML</a>
+      <button class="btn btn-dark" onclick="window.print()">In / Xuất PDF (Ctrl+P)</button>
+    </div>
+  </header>
+
+  <main class="master-container">
+
+    <!-- PHẦN 1: SƠ ĐỒ USE CASE PHÂN HỆ XÁC THỰC -->
+    <section class="section-card" id="section-usecase">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.1.A: Sơ đồ Use Case Phân hệ Xác thực & Kiểm soát Phiên (UML 2.5 Use Case Diagram)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Mô tả các Actor, Use Case cốt lõi và các quan hệ phụ thuộc «include», «extend» theo chuẩn giáo khoa</p>
+        </div>
+        <span class="badge">OMG UML 2.5</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1020" height="460" viewBox="0 0 1020 460" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="uc-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="#334155" stroke-width="1.5" />
+            </marker>
+          </defs>
+
+          <!-- SYSTEM BOUNDARY -->
+          <rect x="220" y="25" width="760" height="410" rx="8" fill="#ffffff" stroke="#334155" stroke-width="1.8" />
+          <rect x="220" y="25" width="460" height="28" fill="#f1f5f9" stroke="#334155" stroke-width="1.8" />
+          <text x="235" y="44" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">«subsystem» Xác thực, Ủy quyền &amp; Quản lý Phiên (Auth Subsystem)</text>
+
+          <!-- ACTOR 1: Người dùng hệ thống -->
+          <g transform="translate(60, 120)">
+            <circle cx="45" cy="18" r="13" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="31" x2="45" y2="65" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="18" y1="42" x2="72" y2="42" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="22" y2="95" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="68" y2="95" stroke="#0f172a" stroke-width="1.8" />
+            <text x="45" y="115" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">Người dùng</text>
+            <text x="45" y="130" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">(System User)</text>
+          </g>
+
+          <!-- ACTOR 2: apiFetch Interceptor -->
+          <g transform="translate(60, 300)">
+            <circle cx="45" cy="18" r="13" fill="#ffffff" stroke="#475569" stroke-width="1.8" />
+            <line x1="45" y1="31" x2="45" y2="65" stroke="#475569" stroke-width="1.8" />
+            <line x1="18" y1="42" x2="72" y2="42" stroke="#475569" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="22" y2="95" stroke="#475569" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="68" y2="95" stroke="#475569" stroke-width="1.8" />
+            <text x="45" y="115" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a">Bộ đón chặn ngầm</text>
+            <text x="45" y="128" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«system» apiFetch</text>
+          </g>
+
+          <!-- USE CASES -->
+          <!-- UC-01: Đăng nhập -->
+          <ellipse cx="380" cy="160" rx="115" ry="32" fill="#f8fafc" stroke="#0f172a" stroke-width="1.8" />
+          <text x="380" y="156" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">UC-01: Đăng nhập</text>
+          <text x="380" y="172" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">vào Hệ thống</text>
+
+          <!-- UC-01.1: Xác thực mật khẩu BCrypt -->
+          <ellipse cx="710" cy="85" rx="125" ry="26" fill="#ffffff" stroke="#475569" stroke-width="1.6" />
+          <text x="710" y="81" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#0f172a">Xác thực Mật khẩu BCrypt</text>
+          <text x="710" y="96" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#64748b">(AuthenticationManager)</text>
+
+          <!-- UC-01.2: Cấp phát cặp Dual-Token -->
+          <ellipse cx="710" cy="155" rx="125" ry="26" fill="#ffffff" stroke="#475569" stroke-width="1.6" />
+          <text x="710" y="151" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#0f172a">Cấp phát cặp Dual-Token</text>
+          <text x="710" y="166" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#64748b">(Access Token &amp; Cookie RT)</text>
+
+          <!-- UC-02: Truy cập API bảo vệ -->
+          <ellipse cx="380" cy="275" rx="115" ry="32" fill="#f8fafc" stroke="#0f172a" stroke-width="1.8" />
+          <text x="380" y="271" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">UC-02: Truy cập Tài nguyên</text>
+          <text x="380" y="287" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">được Bảo vệ (Protected API)</text>
+
+          <!-- UC-03: Tự động làm mới phiên ngầm (extend) -->
+          <ellipse cx="710" cy="275" rx="130" ry="32" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+          <text x="710" y="271" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">UC-03: Tự động Làm mới</text>
+          <text x="710" y="287" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">Phiên ngầm (Silent Refresh)</text>
+
+          <!-- UC-04: Cưỡng chế đăng xuất (extend) -->
+          <ellipse cx="710" cy="375" rx="130" ry="30" fill="#ffffff" stroke="#b91c1c" stroke-width="1.6" />
+          <text x="710" y="371" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#b91c1c">UC-04: Cưỡng chế Đăng xuất</text>
+          <text x="710" y="386" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#dc2626">(Refresh Token Expired/Revoked)</text>
+
+          <!-- CONNECTORS -->
+          <!-- User -> UC-01 -->
+          <line x1="140" y1="170" x2="265" y2="160" stroke="#0f172a" stroke-width="1.6" />
+          <!-- User -> UC-02 -->
+          <line x1="140" y1="190" x2="270" y2="265" stroke="#0f172a" stroke-width="1.6" />
+          <!-- apiFetch -> UC-03 -->
+          <line x1="140" y1="340" x2="590" y2="295" stroke="#475569" stroke-width="1.6" stroke-dasharray="4 3" />
+
+          <!-- UC-01 «include» UC-01.1 -->
+          <line x1="450" y1="135" x2="595" y2="100" stroke="#475569" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow)" />
+          <rect x="500" y="105" width="65" height="16" fill="#ffffff" />
+          <text x="502" y="117" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#334155">«include»</text>
+
+          <!-- UC-01 «include» UC-01.2 -->
+          <line x1="495" y1="160" x2="585" y2="155" stroke="#475569" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow)" />
+          <rect x="515" y="148" width="65" height="16" fill="#ffffff" />
+          <text x="517" y="160" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#334155">«include»</text>
+
+          <!-- UC-03 «extend» UC-02 -->
+          <line x1="580" y1="275" x2="495" y2="275" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow)" />
+          <rect x="510" y="260" width="62" height="16" fill="#ffffff" />
+          <text x="513" y="272" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#0f172a">«extend»</text>
+          <text x="512" y="300" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-style="italic" fill="#64748b">Point: {401 Unauthorized}</text>
+
+          <!-- UC-04 «extend» UC-03 -->
+          <line x1="710" y1="345" x2="710" y2="307" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow)" />
+          <rect x="715" y="320" width="62" height="16" fill="#ffffff" />
+          <text x="718" y="332" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#b91c1c">«extend»</text>
+          <text x="780" y="332" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-style="italic" fill="#b91c1c">Point: {RT expired in Redis}</text>
+        </svg>
+      </div>
+
+      <div class="notes-box">
+        <strong>Đặc tả quan hệ Use Case trong Báo cáo:</strong><br>
+        • <strong>UC-01 (Đăng nhập)</strong>: Bắt buộc <code>«include»</code> việc xác thực mật khẩu băm BCrypt qua <code>AuthenticationManager</code> và phát hành cặp Dual-Token (Access Token lưu tại bộ nhớ Client, Refresh Token lưu trong HttpOnly Cookie &amp; Redis).<br>
+        • <strong>UC-03 (Tự động làm mới phiên ngầm)</strong>: Quan hệ <code>«extend»</code> mở rộng từ <strong>UC-02 (Truy cập API bảo vệ)</strong>, được kích hoạt tự động khi nhận mã lỗi <code>HTTP 401 Unauthorized</code> mà không làm gián đoạn trải nghiệm người dùng.<br>
+        • <strong>UC-04 (Cưỡng chế đăng xuất)</strong>: Được mở rộng kích hoạt khi Refresh Token trong Cookie hoặc Redis hết hạn (TTL 7 ngày kết thúc) hoặc tài khoản bị vô hiệu hóa.
+      </div>
+    </section>
+
+    <!-- PHẦN 2: SƠ ĐỒ KIẾN TRÚC & PIPELINE (TỐI GIẢN & TINH GỌN) -->
+    <section class="section-card" id="section-architecture">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.1.B: Sơ đồ Khối Kiến trúc 3 Tầng &amp; Đường ống Pipeline 3 Giai đoạn (Tối giản)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Thiết kế tinh gọn, lược bỏ chi tiết rườm rà, tập trung vào luồng chuyển động dữ liệu giữa Client, Gateway và Storage</p>
+        </div>
+        <span class="badge">Architecture &amp; Pipeline</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1200" height="510" viewBox="0 0 1200 510" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="pipe-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="#0f172a" stroke-width="1.6" />
+            </marker>
+          </defs>
+
+          <!-- TOP: 3 TIERS (TỐI GIẢN) -->
+          <!-- TIER 1 -->
+          <rect x="20" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="20" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="35" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">1. CLIENT TIER (REACT SPA)</text>
+          
+          <rect x="35" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="45" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• localStorage:</text>
+          <text x="145" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Lưu Access Token (15m) &amp; User Info</text>
+
+          <rect x="35" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="45" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• HttpOnly Cookie:</text>
+          <text x="170" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Refresh Token (7d, chống XSS)</text>
+
+          <rect x="35" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="45" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• apiFetch:</text>
+          <text x="125" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#334155">Tự gắn Bearer, Đón 401 &amp; Hàng đợi Queue</text>
+
+          <!-- TIER 2 -->
+          <rect x="420" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="420" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="435" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">2. SECURITY TIER (SPRING SECURITY)</text>
+
+          <rect x="435" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• JwtAuthFilter:</text>
+          <text x="545" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Giải mã JWT, nạp SecurityContext</text>
+
+          <rect x="435" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• AuthManager:</text>
+          <text x="545" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Xác thực username &amp; BCrypt hash</text>
+
+          <rect x="435" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• RBAC Filter:</text>
+          <text x="540" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Kiểm tra vai trò (@PreAuthorize)</text>
+
+          <!-- TIER 3 -->
+          <rect x="820" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="820" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="835" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">3. STORAGE TIER (REDIS &amp; MYSQL)</text>
+
+          <rect x="835" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="845" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Redis Cache:</text>
+          <text x="940" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#15803d">Key: RT:&lt;uuid&gt;, TTL 7 ngày (Tự hủy)</text>
+
+          <rect x="835" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="845" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• MySQL DB:</text>
+          <text x="935" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Bảng users, roles, user_roles</text>
+
+          <rect x="835" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="845" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Whitelist/Revoke:</text>
+          <text x="975" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Chống Replay Attack tức thì</text>
+
+          <!-- CONNECTIONS BETWEEN TIERS -->
+          <line x1="380" y1="95" x2="420" y2="95" stroke="#0f172a" stroke-width="1.5" marker-end="url(#pipe-arrow)" />
+          <line x1="780" y1="95" x2="820" y2="95" stroke="#0f172a" stroke-width="1.5" marker-end="url(#pipe-arrow)" />
+
+          <!-- BOTTOM: 3 GIAI ĐOẠN PIPELINE TUẦN TỰ (TINH GỌN) -->
+          <!-- GIAI ĐOẠN 1 -->
+          <g transform="translate(20, 200)">
+            <rect x="0" y="0" width="1160" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.4" />
+            <rect x="0" y="0" width="1160" height="24" fill="#e2e8f0" />
+            <text x="15" y="16" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">GIAI ĐOẠN 1: KHỞI TẠO ĐĂNG NHẬP &amp; CẤP PHÁT PHIÊN KÉP (DUAL-TOKEN ISSUANCE)</text>
+            <text x="1000" y="16" font-family="'Fira Code', monospace" font-size="10" font-weight="700" fill="#334155">POST /api/v1/auth/login</text>
+
+            <!-- 5 Steps Horizontal -->
+            <text x="15" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">1. Gửi DTO</text>
+            <text x="15" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">React gửi user/pass</text>
+
+            <text x="180" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="210" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">2. Xác thực BCrypt</text>
+            <text x="210" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">AuthManager đối chiếu</text>
+
+            <text x="400" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="430" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">3. Phát hành Token kép</text>
+            <text x="430" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">AT (15m) + RT (7 ngày)</text>
+
+            <text x="650" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="680" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">4. Lưu RT vào Redis</text>
+            <text x="680" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">SET refresh_token:&lt;id&gt; (7d)</text>
+
+            <text x="890" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="920" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#15803d">5. Phản hồi Client</text>
+            <text x="920" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#15803d">Body: AT | Set-Cookie: RT</text>
+          </g>
+
+          <!-- GIAI ĐOẠN 2 -->
+          <g transform="translate(20, 305)">
+            <rect x="0" y="0" width="1160" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.4" />
+            <rect x="0" y="0" width="1160" height="24" fill="#e2e8f0" />
+            <text x="15" y="16" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">GIAI ĐOẠN 2: ỦY QUYỀN &amp; TRUY CẬP TÀI NGUYÊN ĐƯỢC BẢO VỆ (PROTECTED API CALL)</text>
+            <text x="950" y="16" font-family="'Fira Code', monospace" font-size="10" font-weight="700" fill="#334155">Authorization: Bearer &lt;AT&gt;</text>
+
+            <text x="15" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">1. Gắn Bearer AT</text>
+            <text x="15" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">apiFetch lấy từ localStorage</text>
+
+            <text x="240" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="270" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">2. JwtAuthenticationFilter</text>
+            <text x="270" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">Chặn &amp; giải mã chữ ký Token</text>
+
+            <text x="560" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="590" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">3. Nạp SecurityContext</text>
+            <text x="590" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">Nạp Authorities nếu hợp lệ</text>
+
+            <text x="860" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="890" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#15803d">4. Thực thi Nghiệp vụ</text>
+            <text x="890" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#15803d">Controller trả dữ liệu 200 OK</text>
+          </g>
+
+          <!-- GIAI ĐOẠN 3 -->
+          <g transform="translate(20, 410)">
+            <rect x="0" y="0" width="1160" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.4" />
+            <rect x="0" y="0" width="1160" height="24" fill="#e2e8f0" />
+            <text x="15" y="16" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">GIAI ĐOẠN 3: XỬ LÝ HẾT HẠN &amp; TỰ ĐỘNG LÀM MỚI NGẦM (SILENT REFRESH &amp; CONCURRENCY QUEUE)</text>
+            <text x="910" y="16" font-family="'Fira Code', monospace" font-size="10" font-weight="700" fill="#b91c1c">401 Catch ➔ POST /refresh ➔ Retry</text>
+
+            <text x="15" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#b91c1c">1. Bắt lỗi 401</text>
+            <text x="15" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#b91c1c">AT hết hạn sau 15 phút</text>
+
+            <text x="180" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="210" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">2. Hàng đợi Queue</text>
+            <text x="210" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">isRefreshing=true (Gom request)</text>
+
+            <text x="440" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="470" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">3. Gửi Cookie ngầm</text>
+            <text x="470" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">POST /auth/refresh-token</text>
+
+            <text x="690" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="720" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">4. Xác thực Redis</text>
+            <text x="720" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#64748b">Đối chiếu RT trong Cache</text>
+
+            <text x="910" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <text x="940" y="48" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" fill="#15803d">5. Cập nhật &amp; Retry</text>
+            <text x="940" y="66" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" fill="#15803d">Lưu AT mới &amp; Giải phóng Queue</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- PHẦN 3: SƠ ĐỒ TUẦN TỰ (CHUẨN OMG UML 2.5 Y HỆT HÌNH 2) -->
+    <section class="section-card" id="section-sequence">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.1.C: Sơ đồ Tuần tự Chi tiết Luồng Làm mới Phiên ngầm &amp; Hàng đợi chống Race Condition (OMG UML 2.5)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Hiện thực hóa chính xác mã nguồn apiFetch.ts, JwtAuthFilter.java, AuthController và Redis Cache Server</p>
+        </div>
+        <span class="badge">OMG UML 2.5 Sequence Diagram</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1240" height="1100" viewBox="0 0 1240 1100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="seq-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9 Z" fill="#0f172a" />
+            </marker>
+            <marker id="seq-reply" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#0f172a" stroke-width="1.4" />
+            </marker>
+            <marker id="seq-reply-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#b91c1c" stroke-width="1.4" />
+            </marker>
+          </defs>
+
+          <!-- PARTICIPANTS / CLASSIFIERS -->
+          <!-- 1. :User (Stick Figure) -->
+          <g transform="translate(50, 15)">
+            <circle cx="40" cy="16" r="12" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="28" x2="40" y2="52" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="20" y1="36" x2="60" y2="36" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="52" x2="24" y2="76" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="52" x2="56" y2="76" stroke="#0f172a" stroke-width="1.8" />
+            <text x="40" y="94" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:User</u></text>
+            <line x1="40" y1="102" x2="40" y2="1050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- 2. :apiFetch («boundary») -->
+          <g transform="translate(240, 45)">
+            <rect x="0" y="0" width="160" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="80" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«boundary»</text>
+            <text x="80" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:apiFetch</u></text>
+            <line x1="80" y1="42" x2="80" y2="1050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- 3. :JwtAuthFilter («control») -->
+          <g transform="translate(480, 45)">
+            <rect x="0" y="0" width="170" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="85" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«control»</text>
+            <text x="85" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:JwtAuthFilter</u></text>
+            <line x1="85" y1="42" x2="85" y2="1050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- 4. :AuthController («control») -->
+          <g transform="translate(730, 45)">
+            <rect x="0" y="0" width="170" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="85" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«control»</text>
+            <text x="85" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:AuthController</u></text>
+            <line x1="85" y1="42" x2="85" y2="1050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- 5. :JwtUtil / :Redis («entity/storage») -->
+          <g transform="translate(980, 45)">
+            <rect x="0" y="0" width="180" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="90" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«entity/storage»</text>
+            <text x="90" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:JwtUtil / :Redis</u></text>
+            <line x1="90" y1="42" x2="90" y2="1050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- ACTIVATION BOXES & CALLS -->
+          <!-- 1: fetchProducts() -->
+          <rect x="85" y="115" width="10" height="50" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="95" y1="125" x2="314" y2="125" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="110" y="120" font-family="'Fira Code', monospace" font-size="10" fill="#0f172a">1: fetchProducts()</text>
+
+          <!-- 2: GET /api/v1/products [Bearer expiredToken] -->
+          <rect x="314" y="125" width="12" height="870" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="326" y1="145" x2="559" y2="145" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="335" y="140" font-family="'Fira Code', monospace" font-size="10" fill="#0f172a">2: GET /api/v1/products [Bearer expiredToken]</text>
+
+          <!-- 3: verifyToken(expiredToken) -->
+          <rect x="559" y="145" width="12" height="65" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="571" y1="165" x2="1064" y2="165" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="580" y="160" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">3: verifyToken(expiredToken)</text>
+
+          <rect x="1064" y="165" width="12" height="35" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1064" y1="185" x2="571" y2="185" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red)" />
+          <text x="590" y="180" font-family="'Fira Code', monospace" font-size="9.5" fill="#b91c1c">4: throw JwtValidationException("Token expired")</text>
+
+          <!-- 5: return 401 Unauthorized -->
+          <line x1="559" y1="205" x2="326" y2="205" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red)" />
+          <text x="340" y="200" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#b91c1c">5: return 401 Unauthorized (UNAUTHORIZED_ACCESS)</text>
+
+          <!-- OPT FRAGMENT: Concurrent requests queue -->
+          <rect x="170" y="225" width="480" height="95" fill="none" stroke="#475569" stroke-width="1.4" />
+          <path d="M 170 225 L 210 225 L 220 237 L 220 245 L 170 245 Z" fill="#e2e8f0" stroke="#475569" stroke-width="1.4" />
+          <text x="177" y="238" font-family="'Fira Code', monospace" font-size="9.5" font-weight="800" fill="#0f172a">opt</text>
+          <text x="230" y="238" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="700" fill="#475569">[isRefreshing == true: Concurrent requests queue]</text>
+
+          <path d="M 326 260 L 365 260 L 365 290 L 326 290" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="375" y="278" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">6: subscribeTokenRefresh(callback)</text>
+
+          <!-- ALT FRAGMENT: Refresh Token valid vs expired -->
+          <rect x="40" y="335" width="1150" height="660" fill="none" stroke="#0f172a" stroke-width="1.6" />
+          <path d="M 40 335 L 80 335 L 90 347 L 90 355 L 40 355 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" />
+          <text x="47" y="348" font-family="'Fira Code', monospace" font-size="10" font-weight="800" fill="#0f172a">alt</text>
+          <text x="100" y="348" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800" fill="#0f172a">[Refresh Token valid in HttpOnly Cookie &amp; Redis]</text>
+
+          <!-- 7: POST /api/v1/auth/refresh-token -->
+          <line x1="326" y1="380" x2="809" y2="380" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="360" y="374" font-family="'Fira Code', monospace" font-size="10" font-weight="700" fill="#0f172a">7: POST /api/v1/auth/refresh-token [Cookie: refresh_token]</text>
+
+          <rect x="809" y="380" width="12" height="230" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+
+          <!-- 8: verifyToken(refreshToken) -->
+          <line x1="821" y1="405" x2="1064" y2="405" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="835" y="399" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">8: verifyToken(refreshToken)</text>
+
+          <rect x="1064" y="405" width="12" height="35" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1064" y1="428" x2="821" y2="428" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="835" y="423" font-family="'Fira Code', monospace" font-size="9" fill="#475569">9: return JwtClaims(uuid, type="refresh_token")</text>
+
+          <!-- 10: get("refresh_token:" + uuid) -->
+          <line x1="821" y1="450" x2="1064" y2="450" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="835" y="444" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">10: get("refresh_token:" + uuid)</text>
+
+          <rect x="1064" y="450" width="12" height="35" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1064" y1="472" x2="821" y2="472" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="835" y="467" font-family="'Fira Code', monospace" font-size="9" fill="#475569">11: return matched (Token verified in Redis)</text>
+
+          <!-- 12: generateAccessToken -->
+          <line x1="821" y1="495" x2="1064" y2="495" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="835" y="489" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">12: generateAccessToken(uuid, authorities)</text>
+
+          <rect x="1064" y="495" width="12" height="35" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="1064" y1="520" x2="821" y2="520" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="835" y="515" font-family="'Fira Code', monospace" font-size="9" fill="#475569">13: return newAccessToken (TTL 15m)</text>
+
+          <!-- 14: return 200 OK -->
+          <line x1="809" y1="560" x2="326" y2="560" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="360" y="554" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#0f172a">14: return 200 OK { data: { accessToken: newAccessToken } }</text>
+
+          <!-- 15: localStorage.setItem -->
+          <path d="M 326 580 L 365 580 L 365 605 L 326 605" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="375" y="596" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">15: localStorage.setItem("accessToken", newAccessToken); onRefreshed()</text>
+
+          <!-- 16: [RETRY] GET /api/v1/products -->
+          <line x1="326" y1="630" x2="559" y2="630" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync)" />
+          <text x="345" y="624" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#0f172a">16: [RETRY] GET /api/v1/products [Bearer newAccessToken]</text>
+
+          <rect x="559" y="630" width="12" height="60" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+
+          <!-- 17: SecurityContextHolder -->
+          <path d="M 571 645 L 610 645 L 610 665 L 571 665" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="618" y="658" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">17: SecurityContextHolder.setAuthentication(auth)</text>
+
+          <!-- 18: return 200 OK -->
+          <line x1="559" y1="680" x2="326" y2="680" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="350" y="675" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">18: return 200 OK { content: [products] }</text>
+
+          <!-- 19: renderView -->
+          <line x1="314" y1="710" x2="95" y2="710" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="120" y="705" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">19: renderView(products) [Seamless UX]</text>
+
+          <!-- ELSE DIVIDER -->
+          <line x1="40" y1="740" x2="1190" y2="740" stroke="#475569" stroke-width="1.4" stroke-dasharray="6 4" />
+          <text x="50" y="760" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800" fill="#b91c1c">[else: Refresh Token expired or revoked in Redis]</text>
+
+          <!-- 20: return 401 Unauthorized -->
+          <rect x="559" y="775" width="12" height="50" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="559" y1="795" x2="326" y2="795" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red)" />
+          <text x="335" y="790" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#b91c1c">20: return 401 Unauthorized (UNAUTHORIZED_REFRESH_TOKEN)</text>
+
+          <!-- 21: clearSessionAndRedirect(/login) -->
+          <path d="M 326 815 L 365 815 L 365 840 L 326 840" fill="none" stroke="#b91c1c" stroke-width="1.3" />
+          <text x="375" y="830" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#b91c1c">21: clearSessionAndRedirect(/login)</text>
+
+          <!-- 22: redirectToLoginView() -->
+          <line x1="314" y1="865" x2="90" y2="865" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply)" />
+          <text x="110" y="860" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">22: redirectToLoginView()</text>
+          
+          <rect x="85" y="865" width="10" height="30" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+        </svg>
+      </div>
+
+      <div class="notes-box">
+        <strong>Giải thích các điểm kỹ thuật cốt lõi theo chuẩn UML 2.5:</strong><br>
+        • Khối <strong>opt [isRefreshing == true]</strong>: Áp dụng cơ chế đăng ký callback (subscriber queue) để gom các request đồng thời trong lúc tiến trình làm mới token đang diễn ra, ngăn chặn triệt để hiện tượng tranh chấp (Race Condition).<br>
+        • Khối <strong>alt</strong>: Phân nhánh rõ ràng giữa kịch bản lý tưởng (Refresh Token hợp lệ trong Cookie &amp; Redis ➔ cấp token mới và tự động gửi lại request ban đầu với trải nghiệm mượt mà Seamless UX) và kịch bản bất thường (Refresh Token hết hạn ➔ xóa sạch phiên và điều hướng về trang đăng nhập).
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="margin-top: 36px; text-align: center; font-size: 12px; color: #64748b; padding-bottom: 24px;">
+    Đồ án Tốt nghiệp: Hệ thống Quản lý Tồn kho & Mua hàng Thời trang • Bản chuẩn OMG UML 2.5
+  </footer>
+
+</body>
+</html>

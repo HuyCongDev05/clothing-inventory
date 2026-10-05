@@ -33,6 +33,7 @@ public enum ErrorCode {
     UNAUTHORIZED_REFRESH_TOKEN(401, "Invalid refresh token"),
     INTERNAL_SERVER_ERROR(500, "Internal server error"),
     INSUFFICIENT_STOCK(400, "Insufficient stock to perform this operation"),
+    WAREHOUSE_CAPACITY_EXCEEDED(400, "Warehouse capacity exceeded. Cannot receive more stock than the remaining capacity allows"),
     INVALID_PURCHASE_ORDER_STATUS_TRANSITION(400, "Invalid purchase order status transition"),
     PURCHASE_ORDER_CANNOT_BE_MODIFIED(400, "Purchase order cannot be modified in its current status"),
     PAYMENT_AMOUNT_EXCEEDS_REMAINING(400, "Payment amount exceeds remaining amount"),

@@ -14,7 +14,7 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "https://longingly-unliteralized-olene.ngrok-free.dev"));
         corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         corsConfiguration.setAllowCredentials(true);

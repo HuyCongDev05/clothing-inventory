@@ -12,5 +12,9 @@ public class DashboardResponseDto {
     private Long totalProduct;
     private Long totalSupplier;
     private Long totalInventory;
-
+    private Long warehouseMaxCapacity;
+    private Long warehouseRemainingCapacity;
+    private Double warehouseOccupancyRate;
+    private String warehouseCapacityStatus;
+    private String warehouseCapacityMessage;
 }

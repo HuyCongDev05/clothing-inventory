@@ -9,6 +9,8 @@ export const ROUTES = {
 
   WAREHOUSE_PRODUCTS: "/warehouse/products",
   WAREHOUSE_CREATE_PRODUCT: "/warehouse/products/create",
+  PRODUCTS: "/products",
+  PRODUCT_DETAIL: "/products/:id",
 
   STOREKEEPER_SUPPLIERS: "/storekeeper/suppliers",
   STOREKEEPER_CONTACT: "/storekeeper/contact",

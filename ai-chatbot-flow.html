@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mục 3.4.3 (Phần 2): Luồng Tích hợp Trợ lý Trí tuệ Nhân tạo Gemini</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #0f172a;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 24px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header-bar {
+      width: 100%;
+      max-width: 1360px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .title-box h1 {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-box p {
+      font-size: 12.5px;
+      color: #475569;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-dark {
+      border: 1.5px solid #0f172a;
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .btn-dark:hover { background: #334155; }
+
+    .btn-outline {
+      border: 1.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+    }
+    .btn-outline:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    .master-container {
+      width: 100%;
+      max-width: 1360px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-header h2 {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Fira Code', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+
+    .svg-container {
+      width: 100%;
+      overflow-x: auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .notes-box {
+      margin-top: 14px;
+      background: #f8fafc;
+      border-left: 3.5px solid #0f172a;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    @media print {
+      body { padding: 0; }
+      .header-bar, .controls-group { display: none; }
+      .section-card { border: none; box-shadow: none; padding: 0; margin-bottom: 30px; page-break-inside: avoid; }
+      .svg-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header-bar">
+    <div class="title-box">
+      <h1>3.4.3 (Phần 2): Luồng Tích hợp Trợ lý Trí tuệ Nhân tạo Gemini 2.5 Flash</h1>
+      <p>Hệ thống Quản lý Kho Thời trang • Dynamic Context Injection & Tường lửa Prompt Injection (OMG UML 2.5)</p>
+    </div>
+    <div class="controls-group">
+      <a href="#section-usecase" class="btn btn-outline">1. Sơ đồ Use Case</a>
+      <a href="#section-architecture" class="btn btn-outline">2. Sơ đồ Kiến trúc (Tối giản)</a>
+      <a href="#section-sequence" class="btn btn-outline">3. Sơ đồ Tuần tự UML</a>
+      <a href="payment-flow.html" class="btn btn-outline">⬅ Xem Luồng Thanh toán</a>
+      <button class="btn btn-dark" onclick="window.print()">In / Xuất PDF (Ctrl+P)</button>
+    </div>
+  </header>
+
+  <main class="master-container">
+
+    <!-- PHẦN 1: USE CASE -->
+    <section class="section-card" id="section-usecase">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.3.B1: Sơ đồ Use Case Phân hệ Trợ lý Thông minh AI (OMG UML 2.5)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Tác nhân Nhân viên/Người dùng, Dịch vụ Google Gemini API và cơ chế phòng vệ Prompt Injection</p>
+        </div>
+        <span class="badge">OMG UML 2.5</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1040" height="420" viewBox="0 0 1040 420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="uc-arrow4b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="#334155" stroke-width="1.5" />
+            </marker>
+          </defs>
+
+          <rect x="230" y="25" width="630" height="370" rx="8" fill="#ffffff" stroke="#334155" stroke-width="1.8" />
+          <rect x="230" y="25" width="440" height="28" fill="#f1f5f9" stroke="#334155" stroke-width="1.8" />
+          <text x="245" y="44" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">«subsystem» Trợ lý AI Thông minh &amp; Tra cứu Tự nhiên</text>
+
+          <g transform="translate(50, 140)">
+            <circle cx="45" cy="18" r="13" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="31" x2="45" y2="65" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="18" y1="42" x2="72" y2="42" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="22" y2="95" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="45" y1="65" x2="68" y2="95" stroke="#0f172a" stroke-width="1.8" />
+            <text x="45" y="115" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">Nhân viên / User</text>
+            <text x="45" y="130" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">(Staff / Admin / All)</text>
+          </g>
+
+          <g transform="translate(890, 150)">
+            <rect x="0" y="10" width="130" height="65" rx="5" fill="#f8fafc" stroke="#0f172a" stroke-width="1.6" />
+            <text x="65" y="32" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9.5" fill="#64748b">«external API»</text>
+            <text x="65" y="48" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a">Google Gemini</text>
+            <text x="65" y="64" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#475569">2.5 Flash API</text>
+          </g>
+
+          <ellipse cx="380" cy="190" rx="125" ry="32" fill="#f8fafc" stroke="#0f172a" stroke-width="1.8" />
+          <text x="380" y="186" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#0f172a">UC-10: Hỏi đáp Tra cứu</text>
+          <text x="380" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="600" fill="#475569">Tồn kho qua AI Chatbot</text>
+
+          <ellipse cx="680" cy="110" rx="125" ry="26" fill="#ffffff" stroke="#475569" stroke-width="1.6" />
+          <text x="680" y="106" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#0f172a">Quét An ninh Đầu vào</text>
+          <text x="680" y="121" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#64748b">(Anti-Prompt Injection)</text>
+
+          <ellipse cx="680" cy="190" rx="125" ry="28" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+          <text x="680" y="186" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a">Tiêm Ngữ cảnh theo Quyền</text>
+          <text x="680" y="201" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#475569">(Dynamic Context Injection)</text>
+
+          <ellipse cx="680" cy="285" rx="125" ry="28" fill="#ffffff" stroke="#b91c1c" stroke-width="1.6" />
+          <text x="680" y="281" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#b91c1c">Cảnh báo Vi phạm An toàn</text>
+          <text x="680" y="296" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#dc2626">(Prompt Injection Detected)</text>
+
+          <ellipse cx="380" cy="320" rx="120" ry="26" fill="#f8fafc" stroke="#475569" stroke-width="1.6" />
+          <text x="380" y="324" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#0f172a">Gợi ý Nút bấm Điều hướng</text>
+
+          <line x1="140" y1="190" x2="255" y2="190" stroke="#0f172a" stroke-width="1.6" />
+          <line x1="140" y1="210" x2="265" y2="315" stroke="#475569" stroke-width="1.4" />
+
+          <line x1="495" y1="170" x2="575" y2="130" stroke="#475569" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow4b)" />
+          <rect x="520" y="138" width="65" height="16" fill="#ffffff" />
+          <text x="522" y="150" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#334155">«include»</text>
+
+          <line x1="505" y1="190" x2="555" y2="190" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow4b)" />
+          <rect x="515" y="182" width="65" height="16" fill="#ffffff" />
+          <text x="517" y="194" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#0f172a">«include»</text>
+
+          <line x1="680" y1="255" x2="680" y2="140" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#uc-arrow4b)" />
+          <rect x="685" y="215" width="62" height="16" fill="#ffffff" />
+          <text x="688" y="227" font-family="'Fira Code', monospace" font-size="9.5" font-weight="700" fill="#b91c1c">«extend»</text>
+          <text x="690" y="243" font-family="'Plus Jakarta Sans', sans-serif" font-size="8.5" font-style="italic" fill="#b91c1c">Point: {Injection}</text>
+
+          <line x1="805" y1="190" x2="890" y2="190" stroke="#0f172a" stroke-width="1.6" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- PHẦN 2: KIẾN TRÚC & PIPELINE -->
+    <section class="section-card" id="section-architecture">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.3.B2: Sơ đồ Kiến trúc 3 Tầng &amp; Quy trình Tiêm Ngữ cảnh Động RAG (Tối giản)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Phối hợp an toàn giữa Client Widget, Spring Boot AI Service và Google Gemini 2.5 Flash API</p>
+        </div>
+        <span class="badge">Architecture &amp; Pipeline</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1200" height="390" viewBox="0 0 1200 390" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="pipe-arrow4c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="#0f172a" stroke-width="1.6" />
+            </marker>
+          </defs>
+
+          <!-- 3 TIERS TOP -->
+          <rect x="20" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="20" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="35" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">1. CLIENT TIER (REACT SPA)</text>
+
+          <rect x="35" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="45" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Chatbot Floating Widget:</text>
+          <text x="210" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Nhập câu hỏi, lưu lịch sử chat</text>
+
+          <rect x="35" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="45" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Markdown &amp; Tag Parser:</text>
+          <text x="210" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Bóc tách thẻ &lt;suggestions&gt;</text>
+
+          <rect x="35" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="45" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Direct Product Link:</text>
+          <text x="195" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#334155">Chuyển [Link] thành nút điều hướng</text>
+
+          <!-- TIER 2 -->
+          <rect x="420" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="420" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="435" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">2. SERVICE TIER (AI &amp; RAG ENGINE)</text>
+
+          <rect x="435" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="445" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• ChatbotSecurityValidator:</text>
+          <text x="635" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#b91c1c">Quét Prompt Injection</text>
+
+          <rect x="435" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Role Identification:</text>
+          <text x="590" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Trích xuất vai trò từ SecurityContext</text>
+
+          <rect x="435" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="445" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Safe Context Builder:</text>
+          <text x="600" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Phân hạch nạp dữ liệu cấp phép</text>
+
+          <!-- TIER 3 -->
+          <rect x="820" y="20" width="360" height="150" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.6" />
+          <rect x="820" y="20" width="360" height="30" rx="8" fill="#0f172a" />
+          <text x="835" y="40" font-family="'Plus Jakarta Sans', sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">3. DATA &amp; AI PROVIDER TIER</text>
+
+          <rect x="835" y="60" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="845" y="80" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• MySQL Database:</text>
+          <text x="975" y="80" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Nguồn sản phẩm, biến thể, sức chứa</text>
+
+          <rect x="835" y="96" width="330" height="30" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <text x="845" y="116" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Gemini 2.5 Flash API:</text>
+          <text x="1005" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#15803d">LLM sinh câu trả lời Markdown</text>
+
+          <rect x="835" y="132" width="330" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="845" y="152" font-family="'Fira Code', monospace" font-size="10.5" font-weight="700" fill="#0f172a">• Stateless Boundary:</text>
+          <text x="990" y="152" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" fill="#475569">Bọc tin nhắn an toàn</text>
+
+          <line x1="380" y1="95" x2="420" y2="95" stroke="#0f172a" stroke-width="1.5" marker-end="url(#pipe-arrow4c)" />
+          <line x1="780" y1="95" x2="820" y2="95" stroke="#0f172a" stroke-width="1.5" marker-end="url(#pipe-arrow4c)" />
+
+          <!-- PIPELINE DƯỚI -->
+          <g transform="translate(20, 200)">
+            <rect x="0" y="0" width="1160" height="150" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.4" />
+            <rect x="0" y="0" width="1160" height="28" fill="#e2e8f0" />
+            <text x="15" y="18" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a">QUY TRÌNH TIÊM NGỮ CẢNH ĐỘNG &amp; SINH CÂU TRẢ LỜI CẤU TRÚC</text>
+            <text x="800" y="18" font-family="'Fira Code', monospace" font-size="10" font-weight="700" fill="#334155">POST /api/v1/chatbot/message ➔ Safe Context ➔ Gemini 2.5 Flash</text>
+
+            <rect x="20" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="30" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">1. Nhập Câu Hỏi</text>
+            <text x="30" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Nhập ngôn ngữ tự nhiên</text>
+            <text x="30" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">"Kiểm tra tồn kho áo thun L"</text>
+
+            <text x="232" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="255" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="265" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#b91c1c">2. Rà Soát An Ninh</text>
+            <text x="265" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Quét chặn Prompt Injection</text>
+            <text x="265" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#b91c1c">validateInput(rawMessage)</text>
+
+            <text x="467" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="490" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="500" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">3. Phân Hạch Quyền</text>
+            <text x="500" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Truy vấn DB theo SecurityContext</text>
+            <text x="500" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">buildContextDataForRole()</text>
+
+            <text x="702" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="725" y="45" width="200" height="85" rx="5" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+            <text x="735" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#15803d">4. Gọi Gemini API</text>
+            <text x="735" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Gói System Prompt + Context</text>
+            <text x="735" y="104" font-family="'Fira Code', monospace" font-size="8.5" fill="#15803d">generateContent(prompt)</text>
+
+            <text x="937" y="90" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" fill="#94a3b8">➔</text>
+
+            <rect x="960" y="45" width="180" height="85" rx="5" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+            <text x="970" y="68" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="800" fill="#0f172a">5. Bóc Tách Thẻ</text>
+            <text x="970" y="86" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#475569">Bóc tách &lt;suggestions&gt;</text>
+            <text x="970" y="104" font-family="'Plus Jakarta Sans', sans-serif" font-size="8.5" fill="#0f172a">[Link] ➔ Nút bấm trực tiếp</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- PHẦN 3: SEQUENCE -->
+    <section class="section-card" id="section-sequence">
+      <div class="section-header">
+        <div>
+          <h2>Hình 3.4.3.B3: Sơ đồ Tuần tự Chi tiết Quy trình Tương tác Trợ lý AI (OMG UML 2.5)</h2>
+          <p style="font-size: 12px; color: #64748b; margin-top: 3px;">Tái hiện chính xác 22 bước: Quét SecurityValidator, trích xuất Role, tiêm Context, gọi Gemini API và phân giải nút bấm</p>
+        </div>
+        <span class="badge">OMG UML 2.5 Sequence Diagram</span>
+      </div>
+
+      <div class="svg-container">
+        <svg width="1260" height="1060" viewBox="0 0 1260 1060" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="seq-sync4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9 Z" fill="#0f172a" />
+            </marker>
+            <marker id="seq-reply4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#0f172a" stroke-width="1.4" />
+            </marker>
+            <marker id="seq-reply-red4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#b91c1c" stroke-width="1.4" />
+            </marker>
+          </defs>
+
+          <!-- PARTICIPANTS -->
+          <g transform="translate(45, 15)">
+            <circle cx="40" cy="16" r="12" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="28" x2="40" y2="52" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="20" y1="36" x2="60" y2="36" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="52" x2="24" y2="76" stroke="#0f172a" stroke-width="1.8" />
+            <line x1="40" y1="52" x2="56" y2="76" stroke="#0f172a" stroke-width="1.8" />
+            <text x="40" y="94" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:Staff / User</u></text>
+            <line x1="40" y1="102" x2="40" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(200, 45)">
+            <rect x="0" y="0" width="160" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="80" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«boundary»</text>
+            <text x="80" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:ChatbotWidgetUI</u></text>
+            <line x1="80" y1="42" x2="80" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(440, 45)">
+            <rect x="0" y="0" width="170" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="85" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«control»</text>
+            <text x="85" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:ChatbotController</u></text>
+            <line x1="85" y1="42" x2="85" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(690, 45)">
+            <rect x="0" y="0" width="160" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="80" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«service»</text>
+            <text x="80" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:ChatbotService</u></text>
+            <line x1="80" y1="42" x2="80" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(930, 45)">
+            <rect x="0" y="0" width="120" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="60" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«database»</text>
+            <text x="60" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:MySQL</u></text>
+            <line x1="60" y1="42" x2="60" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <g transform="translate(1120, 45)">
+            <rect x="0" y="0" width="130" height="42" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.6" />
+            <text x="65" y="17" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="#475569">«external API»</text>
+            <text x="65" y="32" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" fill="#0f172a"><u>:GeminiApi</u></text>
+            <line x1="65" y1="42" x2="65" y2="1010" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" />
+          </g>
+
+          <!-- CALLS -->
+          <rect x="80" y="115" width="10" height="50" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="90" y1="125" x2="274" y2="125" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync4b)" />
+          <text x="100" y="120" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">1: inputQuery("Kiểm tra tồn kho áo thun L")</text>
+
+          <rect x="274" y="125" width="12" height="730" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="286" y1="145" x2="519" y2="145" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync4b)" />
+          <text x="300" y="140" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">2: POST /api/v1/chatbot/message [message, history]</text>
+
+          <rect x="519" y="145" width="12" height="700" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="531" y1="165" x2="764" y2="165" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync4b)" />
+          <text x="545" y="160" font-family="'Fira Code', monospace" font-size="9.5" fill="#0f172a">3: processMessage(requestDto)</text>
+
+          <rect x="764" y="165" width="12" height="660" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+
+          <path d="M 776 185 L 815 185 L 815 205 L 776 205" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="198" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">4: securityValidator.validateInput(rawMessage)</text>
+
+          <!-- ALT -->
+          <rect x="500" y="220" width="710" height="580" fill="none" stroke="#0f172a" stroke-width="1.6" />
+          <path d="M 500 220 L 540 220 L 550 232 L 550 240 L 500 240 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" />
+          <text x="507" y="233" font-family="'Fira Code', monospace" font-size="10" font-weight="800" fill="#0f172a">alt</text>
+          <text x="560" y="233" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="800" fill="#b91c1c">[securityViolation.isPresent(): Prompt Injection Detected]</text>
+
+          <line x1="764" y1="260" x2="531" y2="260" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red4b)" />
+          <text x="545" y="255" font-family="'Fira Code', monospace" font-size="9" fill="#b91c1c">5: return ChatMessageResponseDto(warningMessage, defaultSuggestions)</text>
+
+          <line x1="519" y1="285" x2="80" y2="285" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply-red4b)" />
+          <text x="90" y="280" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="700" fill="#b91c1c">6: displayWarningToast("Yêu cầu chứa từ khóa bị cấm can thiệp hệ thống!")</text>
+
+          <line x1="500" y1="310" x2="1210" y2="310" stroke="#475569" stroke-width="1.4" stroke-dasharray="6 4" />
+          <text x="510" y="330" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="800" fill="#15803d">[else: Safe Input Passed]</text>
+
+          <path d="M 776 345 L 815 345 L 815 365 L 776 365" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="358" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">7: safeMessage = securityValidator.sanitizeInput()</text>
+
+          <path d="M 776 375 L 815 375 L 815 395 L 776 395" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="388" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">8: role = resolveCurrentUserRole() [from SecurityContext]</text>
+
+          <rect x="520" y="415" width="670" height="105" fill="none" stroke="#334155" stroke-width="1.4" />
+          <path d="M 520 415 L 555 415 L 565 427 L 565 435 L 520 435 Z" fill="#e2e8f0" stroke="#334155" stroke-width="1.4" />
+          <text x="527" y="428" font-family="'Fira Code', monospace" font-size="9.5" font-weight="800" fill="#0f172a">opt</text>
+          <text x="575" y="428" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#0f172a">[role == "WAREHOUSE_STAFF": Query Inventory &amp; Variants]</text>
+
+          <line x1="776" y1="450" x2="984" y2="450" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync4b)" />
+          <text x="790" y="445" font-family="'Fira Code', monospace" font-size="8.8" fill="#0f172a">9: findProductsByKeywords(safeMessage)</text>
+
+          <rect x="984" y="450" width="12" height="35" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="984" y1="475" x2="776" y2="475" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply4b)" />
+          <text x="800" y="470" font-family="'Fira Code', monospace" font-size="8.5" fill="#475569">10: return List&lt;ProductVariant&gt; (qty, sku, status)</text>
+
+          <path d="M 776 495 L 815 495 L 815 515 L 776 515" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="508" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">11: contextData = appendInventoryContext(sb, products)</text>
+
+          <path d="M 776 535 L 815 535 L 815 555 L 776 555" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="548" font-family="'Fira Code', monospace" font-size="8.8" fill="#0f172a">12: systemPrompt = buildSystemPrompt(role, contextData)</text>
+
+          <line x1="776" y1="575" x2="1180" y2="575" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync4b)" />
+          <text x="790" y="570" font-family="'Fira Code', monospace" font-size="8.5" font-weight="700" fill="#0f172a">13: generateContent(systemPrompt, history, wrappedUserMessage)</text>
+
+          <rect x="1180" y="575" width="12" height="60" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <path d="M 1192 590 L 1225 590 L 1225 610 L 1192 610" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="1035" y="605" font-family="'Fira Code', monospace" font-size="8.2" fill="#0f172a">14: analyzeContextAndGenerateMarkdown()</text>
+
+          <line x1="1180" y1="630" x2="776" y2="630" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply4b)" />
+          <text x="790" y="625" font-family="'Fira Code', monospace" font-size="8.5" fill="#475569">15: return rawResponse (Markdown + [link](/products/1) + &lt;suggestions&gt;)</text>
+
+          <path d="M 776 655 L 815 655 L 815 675 L 776 675" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="825" y="668" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">16: parseResponse(rawResponse) - bóc tách &lt;suggestions&gt;</text>
+
+          <line x1="764" y1="695" x2="531" y2="695" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply4b)" />
+          <text x="545" y="690" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">17: return ChatMessageResponseDto(reply, suggestions)</text>
+
+          <line x1="519" y1="720" x2="286" y2="720" stroke="#15803d" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply4b)" />
+          <text x="300" y="715" font-family="'Fira Code', monospace" font-size="8.8" font-weight="700" fill="#15803d">18: return 200 OK (Clean JSON Response)</text>
+
+          <path d="M 286 740 L 320 740 L 320 760 L 286 760" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="325" y="753" font-family="'Fira Code', monospace" font-size="8.5" fill="#0f172a">19: renderMessageWithActionButtons(reply, suggestions)</text>
+
+          <line x1="274" y1="775" x2="80" y2="775" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#seq-reply4b)" />
+          <text x="90" y="770" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" fill="#0f172a">20: displayMessage("Hiện có 45 áo thun L", [Xem chi tiết Áo thun])</text>
+
+          <rect x="80" y="805" width="10" height="55" fill="#ffffff" stroke="#0f172a" stroke-width="1.2" />
+          <line x1="90" y1="815" x2="274" y2="815" stroke="#0f172a" stroke-width="1.5" marker-end="url(#seq-sync4b)" />
+          <text x="100" y="810" font-family="'Fira Code', monospace" font-size="9" fill="#0f172a">21: clickProductActionButton("/products/1")</text>
+
+          <path d="M 286 830 L 325 830 L 325 850 L 286 850" fill="none" stroke="#0f172a" stroke-width="1.3" />
+          <text x="330" y="843" font-family="'Fira Code', monospace" font-size="8.8" fill="#15803d">22: navigateToProductDetailView(productId=1)</text>
+        </svg>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="margin-top: 36px; text-align: center; font-size: 12px; color: #64748b; padding-bottom: 24px;">
+    Đồ án Tốt nghiệp: Hệ thống Quản lý Tồn kho & Mua hàng Thời trang • Bản chuẩn OMG UML 2.5
+  </footer>
+
+</body>
+</html>
